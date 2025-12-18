@@ -3,32 +3,46 @@ use std::{env, fs, process::Command};
 pub fn dev() {
     let current_dir = env::current_dir().expect("Failed to get current directory");
     let run_dir = current_dir.join("run");
-    let zshrc_path = run_dir.join(".zshrc");
-    let infinite_theme_path = run_dir.join("infinite.zsh-theme");
 
-    // Create run directory if it doesn't exist
+    // --- 1. ディレクトリ作成 ---
     if !run_dir.exists() {
         fs::create_dir(&run_dir).expect("Failed to create run directory");
-        println!("Created directory: {:?}", run_dir);
     }
-    let zshrc_content = include_str!("../../assets/scripts/dev.zshrc");
-    let dev_zsh_theme = include_str!("../../assets/scripts/dev.zsh-theme");
-    // プレースホルダを実行時の値で置換する
-    let zshrc_content = zshrc_content.replace("{{RUN_DIR}}", &run_dir.to_string_lossy());
+
+    // --- 2. 自分自身のバイナリをコピー ---
+    let exe_path = env::current_exe().expect("Failed to get current executable path");
+    let target_path = run_dir.join(exe_path.file_name().expect("Failed to get file name"));
+    fs::copy(&exe_path, &target_path).expect("Failed to copy self");
+
+    // --- 3. 設定ファイルの作成 ---
+    let zshrc_path = run_dir.join(".zshrc");
+    let zshrc_content = include_str!("../../assets/scripts/dev.zshrc")
+        .replace("{{RUN_DIR}}", &run_dir.to_string_lossy());
+    let theme_path = run_dir.join(".zshrc");
+    let theme_content = include_str!("../../assets/scripts/dev.zsh-theme")
+        .replace("{{RUN_DIR}}", &run_dir.to_string_lossy());
+
     fs::write(&zshrc_path, zshrc_content).expect("Failed to write .zshrc");
-    println!("Created .zshrc at: {:?}", zshrc_path);
+    fs::write(&theme_path, theme_content).expect("Failed to write .zsh-theme");
 
-    // Copy infinite.zsh-theme
-    fs::write(&infinite_theme_path, dev_zsh_theme).expect("Failed to copy infinite.zsh-theme");
-    println!("Copied theme to: {:?}", infinite_theme_path);
+    // --- 4. 環境変数をリセットしてZshを起動 ---
+    println!("Starting clean zsh session...");
 
-    // Start a new zsh session
-    println!("Starting new zsh session with run directory as home...");
-    Command::new("zsh")
-        // HOMEを書き換えるのではなく、Zshの設定参照先(ZDOTDIR)をrun_dirに固定する
+    let mut child = Command::new("zsh");
+
+    child
+        .env_clear() // ← これですべての環境変数を削除
+        // 以下の変数は、Zshを正常に動かすために最低限必要
         .env("ZDOTDIR", &run_dir)
-        // 必要に応じてHOMEも維持または変更
         .env("HOME", &run_dir)
+        // PATHが空だと ls や cd すら困難になるため、現在のPATHを継承
+        .env("PATH", env::var("PATH").unwrap_or_default())
+        // TERMがないと画面が崩れたり、色が使えなかったりします
+        .env("TERM", env::var("TERM").unwrap_or_default())
+        // 一部のプログラムが参照するため USER も入れておくと安全です
+        .env("USER", env::var("USER").unwrap_or_default());
+
+    child
         .spawn()
         .expect("Failed to start zsh session")
         .wait()
