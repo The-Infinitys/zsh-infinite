@@ -1,4 +1,4 @@
-use zsh_seq::{ZshPromptBuilder, ZshSequence};
+use zsh_seq::ZshPromptBuilder;
 
 use crate::zsh::{
     prompt::{PromptConnection, PromptCurveLine},
@@ -9,14 +9,15 @@ pub fn left() {
     let l = PromptConnection::Line.to_string();
     let theme = theme_manager::load_theme();
     let prompt = ZshPromptBuilder::new()
-        .add_sequence(ZshSequence::ForegroundColor(theme.color.sc))
-        .add_sequence(ZshSequence::Literal(curved_lines.top_left.to_string()))
-        .add_sequence(ZshSequence::Literal(l.clone()))
-        .add_sequence(ZshSequence::ForegroundColorEnd)
-        .add_sequence(ZshSequence::Newline)
-        .add_sequence(ZshSequence::ForegroundColor(theme.color.sc))
-        .add_sequence(ZshSequence::Literal(curved_lines.bottom_left.to_string()))
-        .add_sequence(ZshSequence::Literal(l+" "))
-        .add_sequence(ZshSequence::ForegroundColorEnd);
+        .color(theme.color.sc)
+        .str(&curved_lines.top_left)
+        .str(&l)
+        .end_color()
+        .newline()
+        .color(theme.color.sc)
+        .str(&curved_lines.bottom_left)
+        .str(&l)
+        .str(" ")
+        .end_color();
     print!("{}", prompt.build());
 }

@@ -1,5 +1,5 @@
 use crate::zsh::theme_manager;
-use zsh_seq::{ZshPromptBuilder, ZshSequence, NamedColor};
+use zsh_seq::{NamedColor, ZshPromptBuilder};
 
 pub fn transient(exit_code: Option<i32>) {
     let theme = theme_manager::load_theme();
@@ -11,10 +11,10 @@ pub fn transient(exit_code: Option<i32>) {
     };
 
     let prompt = ZshPromptBuilder::new()
-        .add_sequence(ZshSequence::ForegroundColor(color))
-        .add_sequence(ZshSequence::Literal(transient_str.to_string()))
-        .add_sequence(ZshSequence::ForegroundColorEnd)
-        .add_sequence(ZshSequence::ResetStyles);
+        .color(color)
+        .str(&transient_str)
+        .end_color()
+        .reset_styles();
 
     print!("{}", prompt.build());
 }
