@@ -1,5 +1,22 @@
-use crate::zsh::theme_manager;
+use zsh_seq::{ZshPromptBuilder, ZshSequence};
+
+use crate::zsh::{
+    prompt::{PromptConnection, PromptCurveLine},
+    theme_manager,
+};
 pub fn left() {
+    let curved_lines = PromptCurveLine::default();
+    let l = PromptConnection::Line.to_string();
     let theme = theme_manager::load_theme();
-    print!("LEFT_PROMPT (BG: {:?}, FG: {:?})", theme.color.bg, theme.color.fg);
+    let prompt = ZshPromptBuilder::new()
+        .add_sequence(ZshSequence::ForegroundColor(theme.color.sc))
+        .add_sequence(ZshSequence::Literal(curved_lines.top_left.to_string()))
+        .add_sequence(ZshSequence::Literal(l.clone()))
+        .add_sequence(ZshSequence::ForegroundColorEnd)
+        .add_sequence(ZshSequence::Newline)
+        .add_sequence(ZshSequence::ForegroundColor(theme.color.sc))
+        .add_sequence(ZshSequence::Literal(curved_lines.bottom_left.to_string()))
+        .add_sequence(ZshSequence::Literal(l+" "))
+        .add_sequence(ZshSequence::ForegroundColorEnd);
+    print!("{}", prompt.build());
 }

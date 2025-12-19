@@ -1,11 +1,11 @@
-use zsh_seq::NamedColor;
 use serde::{Deserialize, Serialize};
+use zsh_seq::NamedColor;
 mod named_color_serde;
-use crate::zsh::prompt::{PromptConnection, PromptSeparation};
 use super::theme_manager;
+use crate::zsh::prompt::{PromptConnection, PromptSeparation};
 use dialoguer::{Input, Select};
-use std::str::FromStr;
-use std::fmt; // Keep this import as it's used by DisplayNamedColor
+use std::fmt;
+use std::str::FromStr; // Keep this import as it's used by DisplayNamedColor
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct PromptTheme {
@@ -20,6 +20,10 @@ pub struct PromptColorScheme {
     pub bg: NamedColor,
     #[serde(with = "named_color_serde")]
     pub fg: NamedColor,
+    #[serde(with = "named_color_serde")]
+    pub pc: NamedColor,
+    #[serde(with = "named_color_serde")]
+    pub sc: NamedColor,
     pub separation: SeparationColor,
 }
 
@@ -72,6 +76,8 @@ impl Default for PromptColorScheme {
         Self {
             bg: NamedColor::Black,
             fg: NamedColor::White,
+            pc: NamedColor::Cyan,
+            sc: NamedColor::LightBlack,
             separation: SeparationColor::Single(NamedColor::LightBlack),
         }
     }
@@ -140,10 +146,12 @@ fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> Name
         .with_prompt(prompt_text)
         .default(DisplayNamedColor(default_color).to_string())
         .interact_text()
-        .map(|s| named_color_serde::deserialize_from_str(s.as_str()).unwrap_or_else(|e| {
-            eprintln!("Invalid color input: {}. Using default.", e);
-            default_color.clone()
-        }))
+        .map(|s| {
+            named_color_serde::deserialize_from_str(s.as_str()).unwrap_or_else(|e| {
+                eprintln!("Invalid color input: {}. Using default.", e);
+                default_color.clone()
+            })
+        })
         .unwrap_or_else(|e| {
             eprintln!("Error reading input: {}. Using default.", e);
             default_color.clone()
@@ -153,8 +161,29 @@ fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> Name
 fn configure_colors(theme: &mut PromptTheme) {
     println!("\n--- Configure Colors ---");
 
-    theme.color.bg = prompt_for_named_color("Enter background color (e.g., Black, FullColor(255,0,0))", &theme.color.bg);
-    theme.color.fg = prompt_for_named_color("Enter foreground color (e.g., White, Code256(123))", &theme.color.fg);
+    // Background Color
+    theme.color.bg = prompt_for_named_color(
+        "Enter background color (e.g., Black, FullColor(255,0,0))",
+        &theme.color.bg,
+    );
+
+    // Foreground Color
+    theme.color.fg = prompt_for_named_color(
+        "Enter foreground color (e.g., White, Code256(123))",
+        &theme.color.fg,
+    );
+
+    // Primary Color (pc) - 追加
+    theme.color.pc = prompt_for_named_color(
+        "Enter primary color (pc) (e.g., Cyan, Green)",
+        &theme.color.pc,
+    );
+
+    // Secondary Color (sc) - 追加
+    theme.color.sc = prompt_for_named_color(
+        "Enter secondary color (sc) (e.g., Blue, Magenta)",
+        &theme.color.sc,
+    );
 
     let separation_type_options = ["Single Color", "Rainbow"];
     let selection = Select::new()
@@ -171,7 +200,7 @@ fn configure_colors(theme: &mut PromptTheme) {
         0 => {
             let default_sep_color = match &theme.color.separation {
                 SeparationColor::Single(c) => c.clone(),
-                _ => NamedColor::LightBlack, // Default if converting from Rainbow
+                _ => NamedColor::LightBlack,
             };
             let color = prompt_for_named_color(
                 "Enter single separation color (e.g., LightBlack)",
@@ -182,7 +211,7 @@ fn configure_colors(theme: &mut PromptTheme) {
         1 => {
             let default_hue = match theme.color.separation {
                 SeparationColor::Rainbow(h) => h,
-                _ => 0.0, // Default if converting from Single
+                _ => 0.0,
             };
             let hue = Input::new()
                 .with_prompt("Enter rainbow start hue (0.0-360.0)")
@@ -204,8 +233,18 @@ fn configure_connection(theme: &mut PromptTheme) {
     ];
     let selection = Select::new()
         .with_prompt("Choose prompt connection style")
-        .items(&options.iter().map(|c| c.to_string()).collect::<Vec<String>>())
-        .default(options.iter().position(|&p| p == theme.connection).unwrap_or(0))
+        .items(
+            &options
+                .iter()
+                .map(|c| c.to_string())
+                .collect::<Vec<String>>(),
+        )
+        .default(
+            options
+                .iter()
+                .position(|&p| p == theme.connection)
+                .unwrap_or(0),
+        )
         .interact()
         .unwrap();
 
@@ -223,14 +262,23 @@ fn configure_separation(theme: &mut PromptTheme) {
     ];
     let selection = Select::new()
         .with_prompt("Choose prompt separation style")
-        .items(&options.iter().map(|s| format!("{:?}", s)).collect::<Vec<String>>())
-        .default(options.iter().position(|&p| p == theme.separation).unwrap_or(0))
+        .items(
+            &options
+                .iter()
+                .map(|s| format!("{:?}", s))
+                .collect::<Vec<String>>(),
+        )
+        .default(
+            options
+                .iter()
+                .position(|&p| p == theme.separation)
+                .unwrap_or(0),
+        )
         .interact()
         .unwrap();
 
     theme.separation = options[selection];
 }
-
 
 pub fn main() {
     let mut current_theme = theme_manager::load_theme();
@@ -239,7 +287,12 @@ pub fn main() {
         println!("\n--- Zsh Infinite Theme Configuration ---");
         println!("Current Theme: {:?}", current_theme);
 
-        let options = ["Configure Colors", "Configure Connection", "Configure Separators", "Save and Exit"];
+        let options = [
+            "Configure Colors",
+            "Configure Connection",
+            "Configure Separators",
+            "Save and Exit",
+        ];
         let selection = Select::new()
             .with_prompt("What do you want to configure?")
             .items(&options)

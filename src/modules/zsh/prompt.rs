@@ -1,14 +1,15 @@
 mod left;
 mod right;
+mod transient;
 pub use left::left;
 pub use right::right;
-
-use crate::{args::PromptSide, zsh::theme::PromptTheme};
+pub use transient::transient;
+use crate::{args::PromptType, zsh::theme::PromptTheme};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
 pub struct PromptBox {
-    pub side: PromptSide,
+    pub side: PromptType,
     pub priority: u32,
     pub content: String,
 }
