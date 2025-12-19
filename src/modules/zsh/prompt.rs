@@ -113,6 +113,7 @@ impl Prompt {
             .color_bg(end_sep_color)
             .color(bg_color)
             .str(&theme.separation.sep_box().left)
+            .end_color_bg()
             .end_color()
             .color(end_sep_color)
             .str(&theme.separation.sep_box().left)

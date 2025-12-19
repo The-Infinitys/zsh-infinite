@@ -15,10 +15,24 @@ pub struct PromptTheme {
     pub prompt_contents: PromptContents,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PromptContents {
     pub left: Vec<PromptContent>,
     pub right: Vec<PromptContent>,
+}
+
+impl Default for PromptContents {
+    fn default() -> Self {
+        Self {
+            left: vec![
+                PromptContent::Env("USER".to_string()),
+                PromptContent::Shell(vec!["hostname".to_string()]),
+            ],
+            right: vec![
+                PromptContent::Env("PWD".to_string()),
+            ],
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
