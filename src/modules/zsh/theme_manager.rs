@@ -12,9 +12,7 @@ const APPLICATION: &str = "infinite";
 const THEME_FILE_NAME: &str = "theme.yaml";
 
 fn get_theme_file_path() -> Option<PathBuf> {
-    if let Some(proj_dirs) =
-        ProjectDirs::from(QUALIFIER, ORGANIZATION, APPLICATION)
-    {
+    if let Some(proj_dirs) = ProjectDirs::from(QUALIFIER, ORGANIZATION, APPLICATION) {
         let config_dir = proj_dirs.config_dir();
         let theme_file_path = config_dir.join(THEME_FILE_NAME);
         Some(theme_file_path)

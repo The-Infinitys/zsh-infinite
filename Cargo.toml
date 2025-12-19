@@ -9,4 +9,5 @@ dialoguer = "0.12.0"
 directories = "6.0.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_yaml = "0.9.34"
+tokio = { version = "1.48.0", features = ["full"] }
 zsh-seq.path="zsh-seq"

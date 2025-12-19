@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize, Serializer, Deserializer};
 use serde::de::{self, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use zsh_seq::NamedColor;
 mod named_color_serde; // 既存のファイルをそのまま使用
 use super::theme_manager;
@@ -27,19 +27,30 @@ pub enum PromptContent {
     Env(String),
 }
 
+use tokio::process::Command;
+
+// ... 既存のコード ...
+
 impl PromptContent {
-    pub fn content(&self) -> Option<String> {
+    pub async fn content(&self) -> Option<String> {
         match self {
             Self::Shell(args) => {
-                if args.is_empty() { return None; }
-                let output = std::process::Command::new(&args[0])
+                if args.is_empty() {
+                    return None;
+                }
+                let output = Command::new(&args[0])
                     .args(&args[1..])
                     .output()
+                    .await
                     .ok()?;
 
                 if output.status.success() {
                     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                    if stdout.is_empty() { None } else { Some(stdout) }
+                    if stdout.is_empty() {
+                        None
+                    } else {
+                        Some(stdout)
+                    }
                 } else {
                     None
                 }
@@ -69,7 +80,10 @@ pub enum SeparationColor {
     // Rainbowをf32ではなくNamedColorで保持するように変更
     Rainbow(#[serde(with = "named_color_serde")] NamedColor),
     // Gradientにカスタムシリアライザを適用
-    #[serde(serialize_with = "serialize_gradient", deserialize_with = "deserialize_gradient")]
+    #[serde(
+        serialize_with = "serialize_gradient",
+        deserialize_with = "deserialize_gradient"
+    )]
     Gradient(Vec<(NamedColor, f32)>),
 }
 
@@ -136,16 +150,24 @@ impl SeparationColor {
                 NamedColor::FullColor(rgb)
             }
             Self::Gradient(stops) => {
-                if stops.is_empty() { return NamedColor::White; }
-                if stops.len() == 1 { return stops[0].0.clone(); }
+                if stops.is_empty() {
+                    return NamedColor::White;
+                }
+                if stops.len() == 1 {
+                    return stops[0].0.clone();
+                }
 
                 let mut sorted_stops = stops.clone();
                 sorted_stops.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
                 let first = &sorted_stops[0];
-                if progress <= first.1 { return first.0.clone(); }
+                if progress <= first.1 {
+                    return first.0.clone();
+                }
                 let last = &sorted_stops[sorted_stops.len() - 1];
-                if progress >= last.1 { return last.0.clone(); }
+                if progress >= last.1 {
+                    return last.0.clone();
+                }
 
                 for i in 0..sorted_stops.len() - 1 {
                     let (c1, p1) = &sorted_stops[i];
@@ -163,18 +185,30 @@ impl SeparationColor {
 
 fn get_hue_from_named_color(color: &NamedColor) -> f32 {
     let (r, g, b) = match color {
-        NamedColor::FullColor(rgb) => (rgb.0 as f32 / 255.0, rgb.1 as f32 / 255.0, rgb.2 as f32 / 255.0),
+        NamedColor::FullColor(rgb) => (
+            rgb.0 as f32 / 255.0,
+            rgb.1 as f32 / 255.0,
+            rgb.2 as f32 / 255.0,
+        ),
         _ => (1.0, 0.0, 0.0), // デフォルト赤
     };
     let max = r.max(g).max(b);
     let min = r.min(g).min(b);
     let delta = max - min;
-    if delta == 0.0 { return 0.0; }
-    let mut h = if max == r { (g - b) / delta % 6.0 } 
-                else if max == g { (b - r) / delta + 2.0 } 
-                else { (r - g) / delta + 4.0 };
+    if delta == 0.0 {
+        return 0.0;
+    }
+    let mut h = if max == r {
+        (g - b) / delta % 6.0
+    } else if max == g {
+        (b - r) / delta + 2.0
+    } else {
+        (r - g) / delta + 4.0
+    };
     h *= 60.0;
-    if h < 0.0 { h += 360.0; }
+    if h < 0.0 {
+        h += 360.0;
+    }
     h
 }
 
@@ -196,13 +230,24 @@ fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (u8, u8, u8) {
     let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
     let x = c * (1.0 - ((h / 60.0) % 2.0 - 1.0).abs());
     let m = l - c / 2.0;
-    let (r_p, g_p, b_p) = if h < 60.0 { (c, x, 0.0) } 
-        else if h < 120.0 { (x, c, 0.0) } 
-        else if h < 180.0 { (0.0, c, x) } 
-        else if h < 240.0 { (0.0, x, c) } 
-        else if h < 300.0 { (x, 0.0, c) } 
-        else { (c, 0.0, x) };
-    (((r_p + m) * 255.0) as u8, ((g_p + m) * 255.0) as u8, ((b_p + m) * 255.0) as u8)
+    let (r_p, g_p, b_p) = if h < 60.0 {
+        (c, x, 0.0)
+    } else if h < 120.0 {
+        (x, c, 0.0)
+    } else if h < 180.0 {
+        (0.0, c, x)
+    } else if h < 240.0 {
+        (0.0, x, c)
+    } else if h < 300.0 {
+        (x, 0.0, c)
+    } else {
+        (c, 0.0, x)
+    };
+    (
+        ((r_p + m) * 255.0) as u8,
+        ((g_p + m) * 255.0) as u8,
+        ((b_p + m) * 255.0) as u8,
+    )
 }
 
 impl Default for PromptColorScheme {
@@ -224,7 +269,7 @@ impl<'a> fmt::Display for DisplayNamedColor<'a> {
         // named_color_serde内のデシリアライザが期待する形式に合わせる
         let s = match self.0 {
             NamedColor::Code256(c) => format!("Code256({})", c),
-            NamedColor::FullColor((r,g,b)) => format!("#{:02X}{:02X}{:02X}", r,g,b),
+            NamedColor::FullColor((r, g, b)) => format!("#{:02X}{:02X}{:02X}", r, g, b),
             _ => format!("{:?}", self.0),
         };
         write!(f, "{}", s)
@@ -265,9 +310,12 @@ fn configure_colors(theme: &mut PromptTheme) {
     theme.color.separation = match selection {
         0 => SeparationColor::Single(prompt_for_named_color("Color", &NamedColor::LightBlack)),
         1 => {
-            let color = prompt_for_named_color("Rainbow Start Color (Hex)", &NamedColor::FullColor((255, 0, 0)));
+            let color = prompt_for_named_color(
+                "Rainbow Start Color (Hex)",
+                &NamedColor::FullColor((255, 0, 0)),
+            );
             SeparationColor::Rainbow(color)
-        },
+        }
         2 => {
             let c1 = prompt_for_named_color("Start Color", &NamedColor::Cyan);
             let c2 = prompt_for_named_color("End Color", &NamedColor::Blue);
@@ -279,11 +327,25 @@ fn configure_colors(theme: &mut PromptTheme) {
 
 fn configure_connection(theme: &mut PromptTheme) {
     println!("\n--- Configure Connection ---");
-    let options = [PromptConnection::None, PromptConnection::Line, PromptConnection::Dot];
+    let options = [
+        PromptConnection::None,
+        PromptConnection::Line,
+        PromptConnection::Dot,
+    ];
     let selection = Select::new()
         .with_prompt("Choose style")
-        .items(&options.iter().map(|o| format!("{:?}", o)).collect::<Vec<_>>())
-        .default(options.iter().position(|&p| p == theme.connection).unwrap_or(0))
+        .items(
+            &options
+                .iter()
+                .map(|o| format!("{:?}", o))
+                .collect::<Vec<_>>(),
+        )
+        .default(
+            options
+                .iter()
+                .position(|&p| p == theme.connection)
+                .unwrap_or(0),
+        )
         .interact()
         .unwrap();
     theme.connection = options[selection];
@@ -291,11 +353,27 @@ fn configure_connection(theme: &mut PromptTheme) {
 
 fn configure_separation(theme: &mut PromptTheme) {
     println!("\n--- Configure Separators ---");
-    let options = [PromptSeparation::Block, PromptSeparation::Sharp, PromptSeparation::Slash, PromptSeparation::Round, PromptSeparation::Blur];
+    let options = [
+        PromptSeparation::Block,
+        PromptSeparation::Sharp,
+        PromptSeparation::Slash,
+        PromptSeparation::Round,
+        PromptSeparation::Blur,
+    ];
     let selection = Select::new()
         .with_prompt("Choose style")
-        .items(&options.iter().map(|o| format!("{:?}", o)).collect::<Vec<_>>())
-        .default(options.iter().position(|&p| p == theme.separation).unwrap_or(0))
+        .items(
+            &options
+                .iter()
+                .map(|o| format!("{:?}", o))
+                .collect::<Vec<_>>(),
+        )
+        .default(
+            options
+                .iter()
+                .position(|&p| p == theme.separation)
+                .unwrap_or(0),
+        )
         .interact()
         .unwrap();
     theme.separation = options[selection];
@@ -305,8 +383,17 @@ pub fn main() {
     let mut current_theme = theme_manager::load_theme();
     loop {
         println!("\n--- Zsh Infinite Theme Configuration ---");
-        let options = ["Configure Colors", "Configure Connection", "Configure Separators", "Save and Exit"];
-        let selection = Select::new().with_prompt("Main Menu").items(&options).interact().unwrap();
+        let options = [
+            "Configure Colors",
+            "Configure Connection",
+            "Configure Separators",
+            "Save and Exit",
+        ];
+        let selection = Select::new()
+            .with_prompt("Main Menu")
+            .items(&options)
+            .interact()
+            .unwrap();
 
         match selection {
             0 => configure_colors(&mut current_theme),
