@@ -7,6 +7,7 @@ pub use right::right;
 use serde::{Deserialize, Serialize};
 pub use transient::transient;
 use zsh_seq::ZshPromptBuilder;
+use std::fmt;
 
 impl Prompt {
     fn left_separation(&self) -> usize {
@@ -164,13 +165,17 @@ pub enum PromptConnection {
     Line,
     Dot,
 }
-impl ToString for PromptConnection {
-    fn to_string(&self) -> String {
-        String::from(match self {
-            Self::None => " ",
-            Self::Line => "─",
-            Self::Dot => "·",
-        })
+impl fmt::Display for PromptConnection {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::None => " ",
+                Self::Line => "─",
+                Self::Dot => "·",
+            }
+        )
     }
 }
 struct PromptCurveLine {

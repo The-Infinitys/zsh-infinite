@@ -309,7 +309,7 @@ fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> Name
         .default(DisplayNamedColor(default_color).to_string())
         .interact_text()
         .map(|s| {
-            named_color_serde::deserialize_from_str(&s).unwrap_or_else(|_| *default_color)
+            named_color_serde::deserialize_from_str(&s).unwrap_or(*default_color)
         })
         .unwrap_or_else(|_| *default_color)
 }
