@@ -5,7 +5,7 @@ use crate::zsh::prompt::{PromptConnection, PromptSeparation};
 use super::theme_manager;
 use dialoguer::{Input, Select};
 use std::str::FromStr;
-use std::fmt;
+use std::fmt; // Keep this import as it's used by DisplayNamedColor
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct PromptTheme {
@@ -77,6 +77,35 @@ impl Default for PromptColorScheme {
     }
 }
 
+// Newtype wrapper for NamedColor to implement Display
+struct DisplayNamedColor<'a>(&'a NamedColor);
+
+impl<'a> fmt::Display for DisplayNamedColor<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Use the logic from named_color_serde for consistent string representation
+        let s = match self.0 {
+            NamedColor::Black => "Black".to_string(),
+            NamedColor::Red => "Red".to_string(),
+            NamedColor::Green => "Green".to_string(),
+            NamedColor::Yellow => "Yellow".to_string(),
+            NamedColor::Blue => "Blue".to_string(),
+            NamedColor::Magenta => "Magenta".to_string(),
+            NamedColor::Cyan => "Cyan".to_string(),
+            NamedColor::White => "White".to_string(),
+            NamedColor::LightBlack => "LightBlack".to_string(),
+            NamedColor::LightRed => "LightRed".to_string(),
+            NamedColor::LightGreen => "LightGreen".to_string(),
+            NamedColor::LightYellow => "LightYellow".to_string(),
+            NamedColor::LightBlue => "LightBlue".to_string(),
+            NamedColor::LightMagenta => "LightMagenta".to_string(),
+            NamedColor::LightCyan => "LightCyan".to_string(),
+            NamedColor::LightWhite => "LightWhite".to_string(),
+            NamedColor::Code256(code) => format!("Code256({})", code),
+            NamedColor::FullColor((r, g, b)) => format!("FullColor({},{},{})", r, g, b),
+        };
+        write!(f, "{}", s)
+    }
+}
 
 // Helper for PromptConnection FromStr
 impl FromStr for PromptConnection {
@@ -109,7 +138,7 @@ impl FromStr for PromptSeparation {
 fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> NamedColor {
     Input::new()
         .with_prompt(prompt_text)
-        .default(default_color.to_string())
+        .default(DisplayNamedColor(default_color).to_string())
         .interact_text()
         .map(|s| named_color_serde::deserialize_from_str(s.as_str()).unwrap_or_else(|e| {
             eprintln!("Invalid color input: {}. Using default.", e);

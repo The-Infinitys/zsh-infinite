@@ -62,11 +62,11 @@ pub enum PromptSeparation {
     Round,
     Blur,
 }
-struct PromptSeparationBox {
+pub struct PromptSeparationBox {
     pub left: String,
     pub right: String,
 }
-struct PromptSeparationLine {
+pub struct PromptSeparationLine {
     pub left: String,
     pub right: String,
 }
