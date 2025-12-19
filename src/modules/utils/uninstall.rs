@@ -1,3 +1,1 @@
-pub fn uninstall(){
-    
-}
+pub fn uninstall() {}

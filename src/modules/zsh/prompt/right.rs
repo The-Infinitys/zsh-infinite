@@ -1,3 +1,3 @@
-pub fn right(){
+pub fn right() {
     print!("WORLD")
 }

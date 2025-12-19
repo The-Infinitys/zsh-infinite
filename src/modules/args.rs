@@ -39,7 +39,7 @@ pub enum ZshCommands {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Clone, Copy, PartialEq, Eq)]
 pub enum PromptSide {
     /// Generate left prompt
     Left,

@@ -1,3 +1,1 @@
-pub fn install(){
-    
-}
+pub fn install() {}

@@ -1,8 +1,8 @@
-mod update;
+mod dev;
 mod install;
 mod uninstall;
-mod dev;
-pub use update::update;
+mod update;
+pub use dev::dev;
 pub use install::install;
 pub use uninstall::uninstall;
-pub use dev::dev;
+pub use update::update;
