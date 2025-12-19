@@ -2,7 +2,7 @@
 
 # プロンプト内でのコマンド置換を有効化
 setopt PROMPT_SUBST
-
+ZLE_RPROMPT_INDENT=0
 # 1. 通常時（入力中）のプロンプトを構築する関数
 function set_full_prompt() {
     PROMPT='$( {{RUN_DIR}}/zsh-infinite zsh prompt left 2>/dev/null)'
@@ -14,7 +14,6 @@ function zle-line-finish() {
     # 実行済みの行をシンプルなデザインに書き換える
     PROMPT='$( {{RUN_DIR}}/zsh-infinite zsh prompt transient --exit-code $? 2>/dev/null)'
     RPROMPT='' # 実行後は右プロンプトを消すとスッキリします
-    
     zle reset-prompt
 }
 zle -N zle-line-finish
