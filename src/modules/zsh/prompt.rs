@@ -1,11 +1,11 @@
 mod left;
 mod right;
 mod transient;
+use crate::{args::PromptType, zsh::theme::PromptTheme};
 pub use left::left;
 pub use right::right;
-pub use transient::transient;
-use crate::{args::PromptType, zsh::theme::PromptTheme};
 use serde::{Deserialize, Serialize};
+pub use transient::transient;
 
 #[derive(Clone)]
 pub struct PromptBox {
@@ -13,6 +13,28 @@ pub struct PromptBox {
     pub priority: u32,
     pub content: String,
 }
+impl Prompt {
+    pub fn add(&mut self, pb: PromptBox) {
+        // side と priority に基づいて挿入すべきインデックスを探す
+        let pos = self
+            .boxes
+            .binary_search_by(|probe| {
+                probe
+                    .side
+                    .cmp(&pb.side)
+                    .then(probe.priority.cmp(&pb.priority))
+            })
+            .unwrap_or_else(|e| e); // 見つからない場合は挿入ポイント(e)を返す
+        self.boxes.insert(pos, pb);
+    }
+    pub fn render_left() -> String {
+        "".to_string()
+    }
+    pub fn render_right() -> String {
+        "".to_string()
+    }
+}
+
 #[derive(Clone)]
 pub struct Prompt {
     pub boxes: Vec<PromptBox>,

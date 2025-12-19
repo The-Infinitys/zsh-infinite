@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use std::cmp::Ordering;
 
 #[derive(Parser)]
 #[command(name = "my_tool", version, about = "CLI tool with nested subcommands")]
@@ -41,16 +42,34 @@ pub enum ZshCommands {
     },
 }
 
-#[derive(Subcommand, Clone, Copy, PartialEq, Eq)]
+#[derive(Subcommand, Clone, Copy, PartialEq, Eq, Debug)] // PartialOrd, Ord は手動実装
 pub enum PromptType {
-    /// Generate left prompt
     Left,
-    /// Generate right prompt
     Right,
-    /// Generate transient prompt
     Transient {
-        /// Exit code of the previous command
         #[arg(long, short = 'e')]
         exit_code: Option<i32>,
     },
+}
+
+impl PromptType {
+    fn weight(&self) -> u8 {
+        match self {
+            Self::Left => 0,
+            Self::Right => 1,
+            Self::Transient { .. } => 2,
+        }
+    }
+}
+
+impl PartialOrd for PromptType {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for PromptType {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.weight().cmp(&other.weight())
+    }
 }
