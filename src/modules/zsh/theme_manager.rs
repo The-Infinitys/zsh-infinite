@@ -47,7 +47,14 @@ pub fn load_theme() -> PromptTheme {
             }
         } else {
             eprintln!("Theme file not found at {:?}", theme_file_path);
-            PromptTheme::default()
+            let default_theme = PromptTheme::default();
+            // Attempt to save the default theme if the file doesn't exist
+            if let Err(e) = save_theme(&default_theme) {
+                eprintln!("Error saving default theme to {:?}: {}", theme_file_path, e);
+            } else {
+                eprintln!("Default theme saved to {:?}", theme_file_path);
+            }
+            default_theme
         }
     } else {
         eprintln!("Could not determine project directories for theme file.");
