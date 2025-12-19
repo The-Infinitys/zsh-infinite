@@ -7,25 +7,12 @@ pub use right::right;
 use serde::{Deserialize, Serialize};
 pub use transient::transient;
 
-#[derive(Clone)]
-pub struct PromptBox {
-    pub side: PromptType,
-    pub priority: u32,
-    pub content: String,
-}
 impl Prompt {
-    pub fn add(&mut self, pb: PromptBox) {
-        // side と priority に基づいて挿入すべきインデックスを探す
-        let pos = self
-            .boxes
-            .binary_search_by(|probe| {
-                probe
-                    .side
-                    .cmp(&pb.side)
-                    .then(probe.priority.cmp(&pb.priority))
-            })
-            .unwrap_or_else(|e| e); // 見つからない場合は挿入ポイント(e)を返す
-        self.boxes.insert(pos, pb);
+    pub fn add_left(&mut self, content: &str) {
+        self.left.push(content.to_string());
+    }
+    pub fn add_right(&mut self, content: &str) {
+        self.right.push(content.to_string());
     }
     pub fn render_left() -> String {
         "".to_string()
@@ -37,7 +24,8 @@ impl Prompt {
 
 #[derive(Clone)]
 pub struct Prompt {
-    pub boxes: Vec<PromptBox>,
+    pub left: Vec<String>,
+    pub right: Vec<String>,
     pub theme: PromptTheme,
 }
 #[derive(Clone, Default, Copy, Debug, Serialize, Deserialize, PartialEq)]
