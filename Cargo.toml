@@ -10,4 +10,7 @@ directories = "6.0.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_yaml = "0.9.34"
 tokio = { version = "1.48.0", features = ["full"] }
+futures = "0.3" # Added for join_all
+crossterm = "0.29.0"
+unicode-width = "0.2.2"
 zsh-seq.path="zsh-seq"

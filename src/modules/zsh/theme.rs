@@ -379,7 +379,7 @@ fn configure_separation(theme: &mut PromptTheme) {
     theme.separation = options[selection];
 }
 
-pub fn main() {
+pub async fn main() {
     let mut current_theme = theme_manager::load_theme();
     loop {
         println!("\n--- Zsh Infinite Theme Configuration ---");

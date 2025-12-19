@@ -1,7 +1,7 @@
 use crate::zsh::theme_manager;
 use zsh_seq::{NamedColor, ZshPromptBuilder};
 
-pub fn transient(exit_code: Option<i32>) {
+pub async fn transient(exit_code: Option<i32>) {
     let theme = theme_manager::load_theme();
     let transient_str = "❯ ";
 

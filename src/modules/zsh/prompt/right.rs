@@ -4,7 +4,8 @@ use crate::zsh::{
     prompt::{PromptConnection, PromptCurveLine},
     theme_manager,
 };
-pub fn right() {
+
+pub async fn right() {
     let curved_lines = PromptCurveLine::default();
     let l = PromptConnection::Line.to_string();
     let theme = theme_manager::load_theme();
