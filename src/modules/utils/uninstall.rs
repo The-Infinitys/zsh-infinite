@@ -1,5 +1,6 @@
 use super::paths;
 use std::{env, fs, path::PathBuf};
+use regex::Regex;
 
 pub fn uninstall() {
     let install_paths = match paths::get_install_paths() {
@@ -46,26 +47,7 @@ pub fn uninstall() {
         );
     }
 
-    // 3. Remove zshrc snippet file
-    if install_paths.zshrc_snippet_path.exists() {
-        match fs::remove_file(&install_paths.zshrc_snippet_path) {
-            Ok(_) => println!(
-                "Removed zshrc snippet file: {:?}",
-                install_paths.zshrc_snippet_path
-            ),
-            Err(e) => eprintln!(
-                "Error removing zshrc snippet file {:?}: {}",
-                install_paths.zshrc_snippet_path, e
-            ),
-        }
-    } else {
-        println!(
-            "Zshrc snippet file not found at {:?}",
-            install_paths.zshrc_snippet_path
-        );
-    }
-
-    // 4. Revert user's ~/.zshrc
+    // 3. Modify user's ~/.zshrc
     let home_dir = match env::var("HOME") {
         Ok(dir) => PathBuf::from(dir),
         Err(_) => {
@@ -77,38 +59,105 @@ pub fn uninstall() {
 
     if user_zshrc_path.exists() {
         match fs::read_to_string(&user_zshrc_path) {
-            Ok(zshrc_content) => {
-                let source_line = format!(
-                    "source \"{}\"",
-                    install_paths.zshrc_snippet_path.to_string_lossy()
-                );
-                let installer_comment_start = "# Added by zsh-infinite installer";
+            Ok(mut zshrc_content) => {
+                if install_paths.is_oh_my_zsh_install {
+                    // Oh My Zsh uninstallation
+                    let theme_name = install_paths.theme_file_path.file_stem().unwrap().to_string_lossy();
+                    let theme_setting = format!("ZSH_THEME=\"{}\"", theme_name);
+                    let zsh_root_path_str = paths::get_oh_my_zsh_root().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+                    let zsh_custom_path_str = paths::get_oh_my_zsh_custom_theme_dir().map(|p| p.parent().unwrap().to_string_lossy().to_string()).unwrap_or_default();
+                    
+                    let zsh_var_line = format!("ZSH=\"{}\"", zsh_root_path_str);
+                    let zsh_custom_var_line = format!("ZSH_CUSTOM=\"{}\"", zsh_custom_path_str);
+                    let source_oh_my_zsh_line = "source $ZSH/oh-my-zsh.sh";
 
-                let original_len = zshrc_content.len();
 
-                // Remove the source line and the comment
-                let updated_content = zshrc_content
-                    .replace(
-                        &format!("\n{}\n{}\n", installer_comment_start, source_line),
-                        "\n",
-                    )
-                    .replace(&format!("\n{}\n", source_line), "\n") // Fallback in case comment was not there
-                    .replace(
-                        &format!("{}\n{}\n", installer_comment_start, source_line),
-                        "",
-                    ) // For start of file without preceding newline
-                    .replace(&source_line, ""); // Final fallback for line itself
+                    let original_len = zshrc_content.len();
 
-                if updated_content.len() != original_len {
-                    match fs::write(&user_zshrc_path, updated_content) {
-                        Ok(_) => println!("Removed '{}' from ~/.zshrc.", source_line),
-                        Err(e) => eprintln!("Error writing to ~/.zshrc: {}", e),
+                    // Remove ZSH_THEME setting
+                    let theme_regex = Regex::new(&format!("(?m)^ZSH_THEME=\"{}\"$", regex::escape(&theme_name))).unwrap();
+                    zshrc_content = theme_regex.replace_all(&zshrc_content, "").to_string();
+
+                    // Remove ZSH and ZSH_CUSTOM variable settings if they match exactly what we added
+                    let zsh_var_regex = Regex::new(&format!("(?m)^{}$", regex::escape(&zsh_var_line))).unwrap();
+                    zshrc_content = zsh_var_regex.replace_all(&zshrc_content, "").to_string();
+
+                    let zsh_custom_var_regex = Regex::new(&format!("(?m)^{}$", regex::escape(&zsh_custom_var_line))).unwrap();
+                    zshrc_content = zsh_custom_var_regex.replace_all(&zshrc_content, "").to_string();
+                    
+                    // Remove source oh-my-zsh.sh
+                    let source_oh_my_zsh_regex = Regex::new(&format!("(?m)^{}$", regex::escape(source_oh_my_zsh_line))).unwrap();
+                    zshrc_content = source_oh_my_zsh_regex.replace_all(&zshrc_content, "").to_string();
+
+                    // Remove any consecutive blank lines
+                    let blank_line_regex = Regex::new(r"\n\n+").unwrap();
+                    zshrc_content = blank_line_regex.replace_all(&zshrc_content, "\n").to_string();
+                    
+                    // Trim leading/trailing newlines
+                    zshrc_content = zshrc_content.trim_start().trim_end().to_string();
+
+                    if original_len != zshrc_content.len() {
+                        match fs::write(&user_zshrc_path, zshrc_content.as_bytes()) {
+                            Ok(_) => println!("~/.zshrc updated to remove Oh My Zsh theme settings."),
+                            Err(e) => eprintln!("Error writing to ~/.zshrc: {}", e),
+                        }
+                    } else {
+                        println!("Oh My Zsh theme settings not found in ~/.zshrc. Skipping modification.");
                     }
+
                 } else {
-                    println!(
-                        "'{}' not found or already removed from ~/.zshrc. Skipping modification.",
-                        source_line
+                    // Standalone uninstallation
+                    // 3. Remove zshrc snippet file
+                    if install_paths.zshrc_snippet_path.exists() {
+                        match fs::remove_file(&install_paths.zshrc_snippet_path) {
+                            Ok(_) => println!(
+                                "Removed zshrc snippet file: {:?}",
+                                install_paths.zshrc_snippet_path
+                            ),
+                            Err(e) => eprintln!(
+                                "Error removing zshrc snippet file {:?}: {}",
+                                install_paths.zshrc_snippet_path, e
+                            ),
+                        }
+                    } else {
+                        println!(
+                            "Zshrc snippet file not found at {:?}",
+                            install_paths.zshrc_snippet_path
+                        );
+                    }
+
+
+                    let source_line = format!(
+                        "source \"{}\"",
+                        install_paths.zshrc_snippet_path.to_string_lossy()
                     );
+                    let installer_comment_start = "# Added by zsh-infinite installer";
+
+                    let original_len = zshrc_content.len();
+
+                    let updated_content = zshrc_content
+                        .replace(
+                            &format!("\n{}\n{}\n", installer_comment_start, source_line),
+                            "\n",
+                        )
+                        .replace(&format!("\n{}\n", source_line), "\n") // Fallback in case comment was not there
+                        .replace(
+                            &format!("{}\n{}\n", installer_comment_start, source_line),
+                            "",
+                        ) // For start of file without preceding newline
+                        .replace(&source_line, ""); // Final fallback for line itself
+
+                    if updated_content.len() != original_len {
+                        match fs::write(&user_zshrc_path, updated_content.as_bytes()) {
+                            Ok(_) => println!("Removed '{}' from ~/.zshrc.", source_line),
+                            Err(e) => eprintln!("Error writing to ~/.zshrc: {}", e),
+                        }
+                    } else {
+                        println!(
+                            "'{}' not found or already removed from ~/.zshrc. Skipping modification.",
+                            source_line
+                        );
+                    }
                 }
             }
             Err(e) => eprintln!("Error reading ~/.zshrc: {}", e),
@@ -120,7 +169,7 @@ pub fn uninstall() {
         );
     }
 
-    // 5. Clean up empty directories
+    // 4. Clean up empty directories
     // Try to remove the bin directory if it's empty
     if install_paths.bin_dir.exists() {
         match fs::remove_dir(&install_paths.bin_dir) {
@@ -132,20 +181,31 @@ pub fn uninstall() {
         }
     }
 
-    // Try to remove the config directory if it's empty
-    let config_dir = install_paths
-        .theme_file_path
-        .parent()
-        .expect("Theme file path should have a parent directory");
-    if config_dir.exists() {
-        match fs::remove_dir(config_dir) {
-            Ok(_) => println!("Removed empty directory: {:?}", config_dir),
-            Err(_) => println!(
-                "Directory {:?} is not empty or could not be removed.",
-                config_dir
-            ),
+    // Try to remove the config directory if it's empty (only for standalone)
+    if !install_paths.is_oh_my_zsh_install {
+        let config_dir_parent = install_paths
+            .zshrc_snippet_path
+            .parent()
+            .expect("Zshrc snippet path should have a parent directory");
+        if config_dir_parent.exists() {
+            // Check if it's empty before trying to remove
+            if fs::read_dir(config_dir_parent).map_or(false, |mut dir| dir.next().is_none()) {
+                match fs::remove_dir(config_dir_parent) {
+                    Ok(_) => println!("Removed empty directory: {:?}", config_dir_parent),
+                    Err(_) => println!(
+                        "Directory {:?} is not empty or could not be removed.",
+                        config_dir_parent
+                    ),
+                }
+            } else {
+                println!(
+                    "Directory {:?} is not empty. Skipping removal.",
+                    config_dir_parent
+                );
+            }
         }
     }
+
 
     println!("\nUninstallation complete!");
 }
