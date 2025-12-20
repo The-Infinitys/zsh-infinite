@@ -137,7 +137,7 @@ impl Prompt {
             .iter()
             .enumerate()
             .fold(builder, |b, (i, content)| {
-                let b = b.color_bg(bg_color).str(content).end_color_bg();
+                let b = b.color_bg(bg_color).str(content);
 
                 // 最後の要素でなければセパレーターを追加
                 if i == self.right.len() - 1 {
@@ -150,6 +150,7 @@ impl Prompt {
                         .str(&theme.separation.sep_line().right) // 右用セパレーター
                         .end_color()
                 }
+                .end_color_bg()
             });
 
         builder.connect(end_cap)
