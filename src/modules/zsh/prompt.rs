@@ -1,13 +1,14 @@
 mod left;
 mod right;
 mod transient;
-use crate::zsh::theme::PromptTheme;
 pub use left::left;
 pub use right::right;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 pub use transient::transient;
 use zsh_seq::ZshPromptBuilder;
+
+use crate::zsh::theme::prompt_theme::PromptTheme;
 
 impl Prompt {
     fn left_separation(&self) -> usize {

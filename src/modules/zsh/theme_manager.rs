@@ -1,10 +1,11 @@
-use super::theme::PromptTheme;
 use directories::ProjectDirs;
 use std::{
     fs,
     io::{self, Write},
     path::PathBuf,
 };
+
+use crate::zsh::theme::prompt_theme::PromptTheme;
 
 const QUALIFIER: &str = "org";
 const ORGANIZATION: &str = "infinite";
