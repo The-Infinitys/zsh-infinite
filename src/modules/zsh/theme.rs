@@ -346,15 +346,14 @@ fn prompt_for_rgb_color(prompt_text: &str, default_rgb: (u8, u8, u8)) -> (u8, u8
         ))
         .interact_text()
         .map(|s| {
-            if s.starts_with('#') && s.len() == 7 {
-                if let (Ok(r), Ok(g), Ok(b)) = (
+            if s.starts_with('#') && s.len() == 7
+                && let (Ok(r), Ok(g), Ok(b)) = (
                     u8::from_str_radix(&s[1..3], 16),
                     u8::from_str_radix(&s[3..5], 16),
                     u8::from_str_radix(&s[5..7], 16),
                 ) {
                     return (r, g, b);
                 }
-            }
             default_rgb
         })
         .unwrap_or(default_rgb)
