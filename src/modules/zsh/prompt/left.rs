@@ -68,11 +68,15 @@ pub async fn left() {
         let terminal_width = terminal::size().map(|(w, _)| w).unwrap_or(80) as usize;
         let left_width = UnicodeWidthStr::width(left_content.text().as_str());
         let right_width = UnicodeWidthStr::width(right_content.text().as_str());
-
-        let side_decor_width = 4;
+        let conn_line_width = UnicodeWidthStr::width(curved_lines.horizontal.as_str());
+        let side_decor_width =
+            UnicodeWidthStr::width(curved_lines.top_left.as_str()) + conn_line_width;
         let connection_len =
-            terminal_width.saturating_sub(left_width + right_width + side_decor_width);
-        let connection = theme.connection.to_string().repeat(connection_len);
+            terminal_width.saturating_sub(left_width + right_width + side_decor_width * 2);
+        let connection = theme
+            .connection
+            .to_string()
+            .repeat(connection_len / conn_line_width);
 
         let mut row_builder = ZshPromptBuilder::new();
         row_builder = row_builder.color(theme.color.sc);
