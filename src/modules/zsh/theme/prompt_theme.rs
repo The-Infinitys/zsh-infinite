@@ -24,13 +24,32 @@ impl Default for PromptTheme {
         }
     }
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct PromptSegmentSeparators {
+    pub start_separator: PromptSeparation,
+    pub mid_separator: PromptSeparation,
+    pub end_separator: PromptSeparation,
+}
+
+impl Default for PromptSegmentSeparators {
+    fn default() -> Self {
+        Self {
+            start_separator: PromptSeparation::Sharp,
+            mid_separator: PromptSeparation::Sharp,
+            end_separator: PromptSeparation::Sharp,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PromptContents {
     pub left: Vec<PromptContent>,
     pub right: Vec<PromptContent>,
     pub color: super::color_scheme::PromptColorScheme,
     pub connection: PromptConnection,
-    pub separation: PromptSeparation,
+    pub left_segment_separators: PromptSegmentSeparators,
+    pub right_segment_separators: PromptSegmentSeparators,
     pub accent_which: AccentWhich,
 }
 
@@ -63,7 +82,8 @@ impl Default for PromptContents {
             ],
             color: super::color_scheme::PromptColorScheme::default(),
             connection: PromptConnection::default(),
-            separation: PromptSeparation::default(),
+            left_segment_separators: PromptSegmentSeparators::default(),
+            right_segment_separators: PromptSegmentSeparators::default(),
             accent_which: AccentWhich::default(),
         }
     }

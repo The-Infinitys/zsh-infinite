@@ -5,7 +5,7 @@ use zsh_seq::NamedColor;
 
 use super::gradient::create_default_rainbow_gradient;
 use super::named_color_serde;
-use super::prompt_theme::PromptContents; // PromptThemeとPromptContentsの定義をインポート
+use super::prompt_theme::{PromptContents, PromptSegmentSeparators}; // PromptSegmentSeparatorsをインポート
 use crate::zsh::prompt::{PromptConnection, PromptSeparation}; // crateルートからのパス
 
 // DisplayNamedColor
@@ -141,8 +141,8 @@ pub fn configure_connection(prompt_contents: &mut PromptContents) {
     prompt_contents.connection = options[selection];
 }
 
-pub fn configure_separation(prompt_contents: &mut PromptContents) {
-    println!("\n--- Configure Separators ---");
+// PromptSeparationの選択UIをヘルパー関数として抽出
+fn select_prompt_separation_style(current_style: &PromptSeparation) -> PromptSeparation {
     let options = [
         PromptSeparation::Block,
         PromptSeparation::Sharp,
@@ -166,10 +166,68 @@ pub fn configure_separation(prompt_contents: &mut PromptContents) {
         .default(
             options
                 .iter()
-                .position(|&p| p == prompt_contents.separation)
+                .position(|&p| p == *current_style)
                 .unwrap_or(0),
         )
         .interact()
         .unwrap();
-    prompt_contents.separation = options[selection];
+    options[selection]
+}
+
+// PromptSegmentSeparatorsを設定する新しい関数
+pub fn configure_segment_separators(segment_separators: &mut PromptSegmentSeparators) {
+    loop {
+        println!("\n--- Configure Segment Separators ---");
+        let options = [
+            "Start Separator",
+            "Mid Separator",
+            "End Separator",
+            "Back to Separation Menu",
+        ];
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Select Segment to Configure")
+            .items(options)
+            .interact()
+            .unwrap();
+
+        match selection {
+            0 => {
+                segment_separators.start_separator =
+                    select_prompt_separation_style(&segment_separators.start_separator);
+            }
+            1 => {
+                segment_separators.mid_separator =
+                    select_prompt_separation_style(&segment_separators.mid_separator);
+            }
+            2 => {
+                segment_separators.end_separator =
+                    select_prompt_separation_style(&segment_separators.end_separator);
+            }
+            3 => break,
+            _ => unreachable!(),
+        }
+    }
+}
+
+pub fn configure_separation(prompt_contents: &mut PromptContents) {
+    loop {
+        println!("\n--- Configure Separators ---");
+        let options = [
+            "Left Segment Separators",
+            "Right Segment Separators",
+            "Back to Prompt Line Menu",
+        ];
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Select Side to Configure Separators")
+            .items(options)
+            .interact()
+            .unwrap();
+
+        match selection {
+            0 => configure_segment_separators(&mut prompt_contents.left_segment_separators),
+            1 => configure_segment_separators(&mut prompt_contents.right_segment_separators),
+            2 => break,
+            _ => unreachable!(),
+        }
+    }
 }

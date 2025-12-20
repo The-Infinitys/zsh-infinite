@@ -36,8 +36,7 @@ impl Prompt {
     }
     fn render_left_fg(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
         let color_scheme = &prompt_contents.color;
-        let separation = &prompt_contents.separation;
-
+        let left_separators = &prompt_contents.left_segment_separators;
         let start_sep_color = color_scheme.accent.get(0.0);
         let bg_color = color_scheme.bg;
         let end_sep_color = color_scheme
@@ -46,11 +45,11 @@ impl Prompt {
         let start_cap = ZshPromptBuilder::new()
             .end_color_bg()
             .color(start_sep_color)
-            .str(&separation.sep_box().right)
+            .str(&left_separators.start_separator.sep_box().right)
             .end_color()
             .color_bg(start_sep_color)
             .color(bg_color)
-            .str(&separation.sep_box().right)
+            .str(&left_separators.start_separator.sep_box().right)
             .end_color()
             .end_color_bg();
         let end_cap = ZshPromptBuilder::new()
@@ -58,11 +57,11 @@ impl Prompt {
             .end_color()
             .color_bg(end_sep_color)
             .color(bg_color)
-            .str(&separation.sep_box().left)
+            .str(&left_separators.end_separator.sep_box().left)
             .end_color()
             .end_color_bg()
             .color(end_sep_color)
-            .str(&separation.sep_box().left)
+            .str(&left_separators.end_separator.sep_box().left)
             .end_color();
         let mut builder = ZshPromptBuilder::new().connect(start_cap);
         builder = self
@@ -79,7 +78,7 @@ impl Prompt {
                             .accent
                             .get((i + 1) as f32 / (self.total_separation() + 1) as f32),
                     )
-                    .str(&separation.sep_line().left)
+                    .str(&left_separators.mid_separator.sep_line().left)
                 }
             });
         builder = builder.connect(end_cap);
@@ -90,11 +89,11 @@ impl Prompt {
             return ZshPromptBuilder::new();
         }
         let color_scheme = &prompt_contents.color;
-        let separation = &prompt_contents.separation;
+        let left_separators = &prompt_contents.left_segment_separators;
 
         let start_cap = ZshPromptBuilder::new()
             .color(color_scheme.accent.get(0.0))
-            .str(&separation.sep_box().right)
+            .str(&left_separators.start_separator.sep_box().right)
             .end_color();
         let content_len = self.left.len();
         let mut builder = ZshPromptBuilder::new().connect(start_cap);
@@ -112,13 +111,13 @@ impl Prompt {
                     b = b
                         .color(color_scheme.accent.get(i as f32 / content_len as f32))
                         .end_color_bg()
-                        .str(&separation.sep_box().left)
+                        .str(&left_separators.end_separator.sep_box().left)
                         .end_color();
                 } else {
                     b = b
                         .color(color_scheme.accent.get(i as f32 / content_len as f32))
                         .color_bg(color_scheme.accent.get((i + 1) as f32 / content_len as f32))
-                        .str(&separation.sep_box().left)
+                        .str(&left_separators.mid_separator.sep_box().left)
                         .end_color()
                         .end_color_bg();
                 }
@@ -137,7 +136,7 @@ impl Prompt {
             return ZshPromptBuilder::new();
         }
         let color_scheme = &prompt_contents.color;
-        let separation = &prompt_contents.separation;
+        let right_separators = &prompt_contents.right_segment_separators;
 
         let bg_color = color_scheme.bg;
         // 右側の開始地点（左端）のセパレーター色
@@ -152,11 +151,11 @@ impl Prompt {
         // 右プロンプトの開始キャップ（左側の境界）
         let start_cap = ZshPromptBuilder::new()
             .color(start_sep_color)
-            .str(&separation.sep_box().right)
+            .str(&right_separators.start_separator.sep_box().right)
             .end_color()
             .color_bg(start_sep_color)
             .color(bg_color)
-            .str(&separation.sep_box().right)
+            .str(&right_separators.start_separator.sep_box().right)
             .end_color();
 
         // 右プロンプトの終了キャップ（右端の境界）
@@ -164,11 +163,11 @@ impl Prompt {
             .end_color_bg()
             .color_bg(end_sep_color)
             .color(bg_color)
-            .str(&separation.sep_box().left)
+            .str(&right_separators.end_separator.sep_box().left)
             .end_color_bg()
             .end_color()
             .color(end_sep_color)
-            .str(&separation.sep_box().left)
+            .str(&right_separators.end_separator.sep_box().left)
             .end_color();
 
         let mut builder = ZshPromptBuilder::new().connect(start_cap);
@@ -189,7 +188,7 @@ impl Prompt {
                     let color_pos = (self.left_separation() + i + 2) as f32
                         / (self.total_separation() + 1) as f32;
                     b.color(color_scheme.accent.get(color_pos))
-                        .str(&separation.sep_line().right) // 右用セパレーター
+                        .str(&right_separators.mid_separator.sep_line().right) // 右用セパレーター
                         .end_color()
                 }
                 .end_color_bg()
@@ -202,7 +201,7 @@ impl Prompt {
             return ZshPromptBuilder::new();
         }
         let color_scheme = &prompt_contents.color;
-        let separation = &prompt_contents.separation;
+        let right_separators = &prompt_contents.right_segment_separators;
 
         let content_len = self.left.len() + self.right.len();
         let start_cap = ZshPromptBuilder::new()
@@ -211,7 +210,7 @@ impl Prompt {
                     .accent
                     .get((self.left.len() + 1) as f32 / content_len as f32),
             )
-            .str(&separation.sep_box().right)
+            .str(&right_separators.start_separator.sep_box().right)
             .end_color();
         let mut builder = ZshPromptBuilder::new().connect(start_cap);
         builder = self
@@ -229,13 +228,13 @@ impl Prompt {
                     b = b
                         .color(color_scheme.accent.get(i as f32 / content_len as f32))
                         .end_color_bg()
-                        .str(&separation.sep_box().left)
+                        .str(&right_separators.end_separator.sep_box().left)
                         .end_color();
                 } else {
                     b = b
                         .color(color_scheme.accent.get(i as f32 / content_len as f32))
                         .color_bg(color_scheme.accent.get((i + 1) as f32 / content_len as f32))
-                        .str(&separation.sep_box().left)
+                        .str(&right_separators.mid_separator.sep_box().left)
                         .end_color()
                         .end_color_bg();
                 }
