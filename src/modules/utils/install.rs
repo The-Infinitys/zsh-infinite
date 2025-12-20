@@ -32,14 +32,19 @@ pub fn install() {
         .expect("Failed to get file name");
     let target_exe_path = install_paths.bin_dir.join(target_exe_name);
 
-    match fs::copy(&current_exe_path, &target_exe_path) {
-        Ok(_) => println!("Executable copied to: {:?}", target_exe_path),
-        Err(e) => {
-            eprintln!(
-                "Error copying executable from {:?} to {:?}: {}",
-                current_exe_path, target_exe_path, e
-            );
-            return;
+    // Check if the current executable is already at the target path
+    if current_exe_path == target_exe_path {
+        println!("Executable already exists at target path: {:?}", target_exe_path);
+    } else {
+        match fs::copy(&current_exe_path, &target_exe_path) {
+            Ok(_) => println!("Executable copied to: {:?}", target_exe_path),
+            Err(e) => {
+                eprintln!(
+                    "Error copying executable from {:?} to {:?}: {}",
+                    current_exe_path, target_exe_path, e
+                );
+                return;
+            }
         }
     }
 
