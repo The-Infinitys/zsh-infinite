@@ -79,7 +79,7 @@ impl Default for PromptContents {
                 // 終了コードの例（呼び出し側で調整される前提）
                 PromptContent::new(
                     "zsh".to_string(),
-                    vec!["-c".to_string(), "echo $?".to_string()],
+                    vec!["-c".to_string(), "echo $LAST_STATUS".to_string()],
                     vec![],
                 ),
             ],

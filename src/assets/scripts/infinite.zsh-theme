@@ -1,27 +1,29 @@
 #!/bin/zsh
 
-# プロンプト内でのコマンド置換を有効化
 setopt PROMPT_SUBST
 ZLE_RPROMPT_INDENT=0
-# 1. 通常時（入力中）のプロンプトを構築する関数
+
 function set_full_prompt() {
-    PROMPT='$( {{RUN_DIR}}/zsh-infinite zsh prompt left 2>/dev/null)'
-    RPROMPT='$( {{RUN_DIR}}/zsh-infinite zsh prompt right 2>/dev/null)'
+    # 実行直後の終了ステータスを即座に保存
+    local last_status=$?
+    
+    # 環境変数 LAST_STATUS として Rust 側に渡す
+    # (Rust側の Command::new は親プロセスの環境変数を継承するため)
+    PROMPT='$(LAST_STATUS='${last_status}' {{RUN_DIR}}/zsh-infinite zsh prompt left 2>/dev/null)'
+    RPROMPT='$(LAST_STATUS='${last_status}' {{RUN_DIR}}/zsh-infinite zsh prompt right 2>/dev/null)'
 }
 
-# 2. コマンド確定後（実行直前）に呼ばれるウィジェット
 function zle-line-finish() {
-    # 実行済みの行をシンプルなデザインに書き換える
-    PROMPT='$( {{RUN_DIR}}/zsh-infinite zsh prompt transient --exit-code $? 2>/dev/null)'
-    RPROMPT='' # 実行後は右プロンプトを消すとスッキリします
+    local last_status=$?
+    # Transient時も同様に環境変数を経由させるとRust側のロジックを統一できます
+    PROMPT='$(LAST_STATUS='${last_status}' {{RUN_DIR}}/zsh-infinite zsh prompt transient 2>/dev/null)'
+    RPROMPT=''
     zle reset-prompt
 }
 zle -N zle-line-finish
 
-# 3. コマンド終了後、次のプロンプトを表示する前にフルデザインに戻す
 function precmd() {
     set_full_prompt
 }
 
-# 初回のプロンプト設定
 set_full_prompt
