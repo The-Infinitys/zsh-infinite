@@ -32,7 +32,6 @@ pub fn install() {
         .expect("Failed to get file name");
     let target_exe_path = install_paths.bin_dir.join(target_exe_name);
 
-    // Check if the current executable is already at the target path
     if current_exe_path == target_exe_path {
         println!(
             "Executable already exists at target path: {:?}",
@@ -61,7 +60,6 @@ pub fn install() {
             .to_string_lossy(),
     );
 
-    // Create theme directory if it doesn't exist
     if let Err(e) = fs::create_dir_all(
         install_paths
             .theme_file_path
@@ -102,71 +100,84 @@ pub fn install() {
             "User's ~/.zshrc not found at {:?}. Please create it.",
             user_zshrc_path
         );
-        // If .zshrc doesn't exist, we can't modify it, so just exit
         return;
     }
 
     match fs::read_to_string(&user_zshrc_path) {
-        Ok(mut zshrc_content) => {
+        Ok(zshrc_content) => {
+            let mut _modified = false;
+            let mut new_zshrc_content_lines: Vec<String> = Vec::new();
+
             if install_paths.is_oh_my_zsh_install {
                 // Oh My Zsh installation
-                let zsh_var = format!(
-                    "ZSH=\"{}\"",
-                    paths::get_oh_my_zsh_root().unwrap().to_string_lossy()
+                let zsh_root = paths::get_oh_my_zsh_root().expect("Oh My Zsh root not found");
+                let zsh_custom_parent = paths::get_oh_my_zsh_custom_theme_dir()
+                    .expect("Oh My Zsh custom theme directory not found")
+                    .parent()
+                    .expect("ZSH_CUSTOM parent directory not found")
+                    .to_path_buf();
+                let theme_name = install_paths
+                    .theme_file_path
+                    .file_stem()
+                    .expect("Theme file name not found")
+                    .to_string_lossy();
+
+                let zsh_var_line = format!("ZSH=\"{}\"", zsh_root.to_string_lossy());
+                let zsh_custom_var_line = format!("ZSH_CUSTOM=\"{}\"", zsh_custom_parent.to_string_lossy());
+                let theme_setting_line = format!("export ZSH_THEME=\"{}\"", theme_name); // export を追加
+                let source_oh_my_zsh_line_exact = "source $ZSH/oh-my-zsh.sh";
+
+                let oh_my_zsh_block = format!(
+                    "{}\n{}\n{}\n{}",
+                    zsh_var_line,
+                    zsh_custom_var_line,
+                    theme_setting_line,
+                    source_oh_my_zsh_line_exact
                 );
-                let zsh_custom_var = format!(
-                    "ZSH_CUSTOM=\"{}\"",
-                    paths::get_oh_my_zsh_custom_theme_dir()
-                        .unwrap()
-                        .parent()
-                        .unwrap()
-                        .to_string_lossy()
-                );
-                let source_oh_my_zsh = "source $ZSH/oh-my-zsh.sh";
-                let theme_setting = format!(
-                    "ZSH_THEME=\"{}\"",
-                    install_paths
-                        .theme_file_path
-                        .file_stem()
-                        .unwrap()
-                        .to_string_lossy()
-                );
 
-                let mut _modified = false;
+                let mut oh_my_zsh_source_found_in_original = false;
+                let mut omz_block_inserted = false;
 
-                // Add ZSH variable if not present
-                if !zshrc_content.contains(&zsh_var) {
-                    zshrc_content.push_str(&format!("\n{}", zsh_var));
+                for line in zshrc_content.lines() {
+                    let trimmed_line = line.trim();
+                    
+                    // 既存の Oh My Zsh 関連の行をスキップ
+                    if trimmed_line.starts_with("ZSH=") ||
+                       trimmed_line.starts_with("ZSH_CUSTOM=") ||
+                       trimmed_line.starts_with("ZSH_THEME=") ||
+                       trimmed_line.starts_with("export ZSH_THEME=")
+                    {
+                        if !omz_block_inserted { // まだブロックが挿入されていなければ、既存の変更があるので_modifiedをセット
+                            _modified = true;
+                        }
+                        continue; // これらの行は新しいブロックとして挿入するのでスキップ
+                    }
+
+                    // source $ZSH/oh-my-zsh.sh の行を特定し、その位置に新しいブロックを挿入
+                    if trimmed_line.contains(source_oh_my_zsh_line_exact) && !omz_block_inserted {
+                        oh_my_zsh_source_found_in_original = true;
+                        new_zshrc_content_lines.push(oh_my_zsh_block.clone());
+                        _modified = true;
+                        omz_block_inserted = true; // ブロック挿入済みフラグ
+                    } else {
+                        new_zshrc_content_lines.push(line.to_string());
+                    }
+                }
+                
+                // もし source $ZSH/oh-my-zsh.sh が元のファイル中に見つからなかった場合、末尾に追加
+                if !oh_my_zsh_source_found_in_original && !omz_block_inserted {
+                    if !new_zshrc_content_lines.is_empty() {
+                        new_zshrc_content_lines.push(String::new()); // 前の行との間に改行を追加
+                    }
+                    new_zshrc_content_lines.push(oh_my_zsh_block.clone());
                     _modified = true;
                 }
 
-                // Add ZSH_CUSTOM variable if not present
-                if !zshrc_content.contains(&zsh_custom_var) {
-                    zshrc_content.push_str(&format!("\n{}", zsh_custom_var));
-                    _modified = true;
-                }
-
-                // Add source oh-my-zsh.sh if not present
-                if !zshrc_content.contains(source_oh_my_zsh) {
-                    zshrc_content.push_str(&format!("\n{}", source_oh_my_zsh));
-                    _modified = true;
-                }
-
-                // Set ZSH_THEME
-                // If ZSH_THEME is already set, replace it. Otherwise, add it.
-                let theme_regex = regex::Regex::new(r"(?m)^ZSH_THEME=.*$").unwrap();
-                if theme_regex.is_match(&zshrc_content) {
-                    zshrc_content = theme_regex
-                        .replace(&zshrc_content, theme_setting.as_str())
-                        .to_string();
-                    _modified = true;
-                } else {
-                    zshrc_content.push_str(&format!("\n{}", theme_setting));
-                    _modified = true;
-                }
+                // 最後の改行を削除し、内容を結合
+                let final_zshrc_content = new_zshrc_content_lines.join("\n");
 
                 if _modified {
-                    match fs::write(&user_zshrc_path, zshrc_content) {
+                    match fs::write(&user_zshrc_path, final_zshrc_content.as_bytes()) {
                         Ok(_) => println!("~/.zshrc updated for Oh My Zsh theme."),
                         Err(e) => eprintln!("Error writing to ~/.zshrc: {}", e),
                     }
@@ -183,7 +194,31 @@ pub fn install() {
                 );
                 let installer_comment_start = "# Added by zsh-infinite installer";
 
-                if !zshrc_content.contains(&source_line) {
+                let mut zshrc_lines: Vec<String> = zshrc_content.lines().map(|s| s.to_string()).collect();
+                let mut source_line_present = false;
+                
+                // 既存の source line をチェックし、削除
+                let original_line_count = zshrc_lines.len();
+                zshrc_lines.retain(|line| {
+                    if line.contains(&source_line) || line.contains(installer_comment_start) {
+                        source_line_present = true;
+                        return false; // 既存の行とコメントを削除
+                    }
+                    true
+                });
+
+                if zshrc_lines.len() != original_line_count {
+                    _modified = true;
+                }
+
+                if !source_line_present {
+                    if !zshrc_lines.is_empty() {
+                        zshrc_lines.push(String::new()); // 前の行との間に改行を追加
+                    }
+                    zshrc_lines.push(installer_comment_start.to_string());
+                    zshrc_lines.push(source_line.to_string());
+                    _modified = true;
+
                     // Create snippet file
                     let zshrc_snippet_content = format!(
                         r#"
@@ -210,18 +245,13 @@ fi
                             install_paths.zshrc_snippet_path
                         );
                     }
+                }
 
-                    zshrc_content
-                        .push_str(&format!("\n{}\n{}\n", installer_comment_start, source_line));
-                    match fs::write(&user_zshrc_path, zshrc_content) {
-                        Ok(_) => println!("'{}' added to ~/.zshrc.", source_line),
+                if _modified {
+                    match fs::write(&user_zshrc_path, zshrc_lines.join("\n").as_bytes()) {
+                        Ok(_) => println!("~/.zshrc updated for standalone theme."),
                         Err(e) => eprintln!("Error writing to ~/.zshrc: {}", e),
                     }
-                } else {
-                    println!(
-                        "'{}' already present in ~/.zshrc. Skipping modification.",
-                        source_line
-                    );
                 }
             }
         }
