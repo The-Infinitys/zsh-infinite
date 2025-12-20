@@ -2,21 +2,25 @@ use serde::{Deserialize, Serialize};
 use tokio::process::Command;
 
 use crate::zsh::prompt::{PromptConnection, PromptSeparation};
+use super::color_scheme::PromptColorScheme;
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default, Copy)]
+pub enum AccentWhich {
+    #[default]
+    ForeGround,
+    BackGround,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PromptTheme {
-    pub color: super::color_scheme::PromptColorScheme,
-    pub connection: PromptConnection,
-    pub separation: PromptSeparation,
     pub prompt_contents_list: Vec<PromptContents>,
+    pub transient_color: PromptColorScheme,
 }
 impl Default for PromptTheme {
     fn default() -> Self {
         Self {
-            color: super::color_scheme::PromptColorScheme::default(),
-            connection: PromptConnection::default(),
-            separation: PromptSeparation::default(),
             prompt_contents_list: vec![PromptContents::default()],
+            transient_color: PromptColorScheme::default(),
         }
     }
 }
@@ -24,6 +28,10 @@ impl Default for PromptTheme {
 pub struct PromptContents {
     pub left: Vec<PromptContent>,
     pub right: Vec<PromptContent>,
+    pub color: super::color_scheme::PromptColorScheme,
+    pub connection: PromptConnection,
+    pub separation: PromptSeparation,
+    pub accent_which: AccentWhich,
 }
 
 impl Default for PromptContents {
@@ -53,6 +61,10 @@ impl Default for PromptContents {
                     "echo $?".to_string(),
                 ]),
             ],
+            color: super::color_scheme::PromptColorScheme::default(),
+            connection: PromptConnection::default(),
+            separation: PromptSeparation::default(),
+            accent_which: AccentWhich::default(),
         }
     }
 }

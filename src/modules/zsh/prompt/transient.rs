@@ -6,7 +6,7 @@ pub async fn transient(exit_code: Option<i32>) {
     let transient_str = "❯ ";
 
     let color = match exit_code {
-        Some(0) => theme.color.pc,
+        Some(0) => theme.transient_color.pc,
         _ => NamedColor::Red,
     };
 

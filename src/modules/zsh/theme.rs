@@ -9,31 +9,78 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
 
 use crate::zsh::theme_manager;
+use crate::zsh::theme::prompt_theme::PromptContents;
 
 pub async fn main() {
     let mut current_theme = theme_manager::load_theme();
     loop {
         println!("\n--- Zsh Infinite Theme Configuration ---");
+
+        // メインメニューのオプションを動的に生成
+        let mut options = vec![
+            "Add new prompt line".to_string(),
+            "Remove last prompt line".to_string(),
+        ];
+        for (i, _) in current_theme.prompt_contents_list.iter().enumerate() {
+            options.push(format!("Configure Prompt Line {}", i));
+        }
+        options.push("Save and Exit".to_string());
+
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Main Menu")
+            .items(&options)
+            .interact()
+            .unwrap();
+
+        match selection {
+            0 => { // Add new prompt line
+                current_theme.prompt_contents_list.push(PromptContents::default());
+                println!("New prompt line added.");
+            }
+            1 => { // Remove last prompt line
+                if current_theme.prompt_contents_list.pop().is_some() {
+                    println!("Last prompt line removed.");
+                } else {
+                    println!("No prompt lines to remove.");
+                }
+            }
+            s if s >= 2 && s < options.len() - 1 => { // Configure Prompt Line
+                let line_index = s - 2;
+                if let Some(prompt_contents) = current_theme.prompt_contents_list.get_mut(line_index) {
+                    configure_prompt_line(prompt_contents).await;
+                } else {
+                    eprintln!("Invalid prompt line index selected.");
+                }
+            }
+            s if s == options.len() - 1 => { // Save and Exit
+                let _ = theme_manager::save_theme(&current_theme);
+                break;
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+async fn configure_prompt_line(prompt_contents: &mut PromptContents) {
+    loop {
+        println!("\n--- Configure Prompt Line ---");
         let options = [
             "Configure Colors",
             "Configure Connection",
             "Configure Separators",
-            "Save and Exit",
+            "Back to Main Menu",
         ];
         let selection = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Main Menu")
+            .with_prompt("Prompt Line Configuration")
             .items(options)
             .interact()
             .unwrap();
 
         match selection {
-            0 => config_ui::configure_colors(&mut current_theme),
-            1 => config_ui::configure_connection(&mut current_theme),
-            2 => config_ui::configure_separation(&mut current_theme),
-            3 => {
-                let _ = theme_manager::save_theme(&current_theme);
-                break;
-            }
+            0 => config_ui::configure_colors(prompt_contents),
+            1 => config_ui::configure_connection(prompt_contents),
+            2 => config_ui::configure_separation(prompt_contents),
+            3 => break,
             _ => unreachable!(),
         }
     }

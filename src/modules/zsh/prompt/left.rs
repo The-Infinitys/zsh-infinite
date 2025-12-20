@@ -9,17 +9,16 @@ use zsh_seq::ZshPromptBuilder;
 
 pub async fn left() {
     let theme = theme_manager::load_theme();
-    let curved_lines = PromptCurveLine::from(theme.connection);
-
-    let h = &curved_lines.horizontal;
-
-    let list = &theme.prompt_contents_list;
 
     // 1. リストが空の場合の早期リターン（またはデフォルト表示）
-    if list.is_empty() {
-        // コンテンツがない場合でも、最低限の枠を表示して入力待ちにする
+    if theme.prompt_contents_list.is_empty() {
+        // デフォルトのPromptContentsから設定を取得
+        let default_prompt_contents = crate::zsh::theme::prompt_theme::PromptContents::default();
+        let curved_lines = PromptCurveLine::from(default_prompt_contents.connection);
+        let h = &curved_lines.horizontal;
+
         let start = ZshPromptBuilder::new()
-            .color(theme.color.sc)
+            .color(default_prompt_contents.color.sc)
             .str(&curved_lines.top_left)
             .str(h)
             .str(h)
@@ -28,7 +27,7 @@ pub async fn left() {
         println!("{}", start.build());
 
         let end = ZshPromptBuilder::new()
-            .color(theme.color.sc)
+            .color(default_prompt_contents.color.sc)
             .str(&curved_lines.bottom_left)
             .str(h)
             .str(" ")
@@ -38,8 +37,10 @@ pub async fn left() {
     }
 
     // 2. リストがある場合のメインループ
-    for (i, prompt_contents) in list.iter().enumerate() {
+    for (i, prompt_contents) in theme.prompt_contents_list.iter().enumerate() {
         let mut prompt = Prompt::default();
+        let curved_lines = PromptCurveLine::from(prompt_contents.connection);
+        let h = &curved_lines.horizontal;
 
         // (非同期取得部分は変更なし)
         let left_futures: Vec<_> = prompt_contents
@@ -62,8 +63,8 @@ pub async fn left() {
             prompt.add_right(&content);
         }
 
-        let left_content = prompt.render_left(&theme);
-        let right_content = prompt.render_right(&theme);
+        let left_content = prompt.render_left(prompt_contents);
+        let right_content = prompt.render_right(prompt_contents);
 
         let terminal_width = terminal::size().map(|(w, _)| w).unwrap_or(80) as usize;
         let left_width = UnicodeWidthStr::width(left_content.text().as_str());
@@ -73,13 +74,13 @@ pub async fn left() {
             UnicodeWidthStr::width(curved_lines.top_left.as_str()) + conn_line_width;
         let connection_len =
             terminal_width.saturating_sub(left_width + right_width + side_decor_width * 2);
-        let connection = theme
+        let connection_str = prompt_contents // `theme.connection` から `prompt_contents.connection` に変更
             .connection
             .to_string()
             .repeat(connection_len / conn_line_width);
 
         let mut row_builder = ZshPromptBuilder::new();
-        row_builder = row_builder.color(theme.color.sc);
+        row_builder = row_builder.color(prompt_contents.color.sc); // `theme.color.sc` から `prompt_contents.color.sc` に変更
 
         // 最初の行は TopLeft、それ以外は CrossLeft
         if i == 0 {
@@ -92,11 +93,11 @@ pub async fn left() {
             .str(h)
             .end_color()
             .connect(left_content)
-            .color(theme.color.pc)
-            .str(&connection)
+            .color(prompt_contents.color.pc) // `theme.color.pc` から `prompt_contents.color.pc` に変更
+            .str(&connection_str)
             .end_color()
             .connect(right_content)
-            .color(theme.color.sc)
+            .color(prompt_contents.color.sc) // `theme.color.sc` から `prompt_contents.color.sc` に変更
             .str(h)
             .str(if i == 0 {
                 &curved_lines.top_right
@@ -109,8 +110,11 @@ pub async fn left() {
     }
 
     // 最終行の描画
+    let default_prompt_contents = crate::zsh::theme::prompt_theme::PromptContents::default();
+    let curved_lines = PromptCurveLine::from(default_prompt_contents.connection);
+    let h = &curved_lines.horizontal;
     let end = ZshPromptBuilder::new()
-        .color(theme.color.sc)
+        .color(default_prompt_contents.color.sc)
         .str(&curved_lines.bottom_left)
         .str(h)
         .str(" ")

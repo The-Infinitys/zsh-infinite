@@ -3,6 +3,7 @@ use zsh_seq::NamedColor;
 
 use super::gradient::{GradientPart, deserialize_gradient, serialize_gradient};
 use super::named_color_serde;
+use super::prompt_theme::AccentWhich; // Import AccentWhich from prompt_theme.rs
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PromptColorScheme {
@@ -17,12 +18,7 @@ pub struct PromptColorScheme {
     pub accent: AccentColor,
     pub accent_which: AccentWhich,
 }
-#[derive(Clone, Debug, Serialize, Deserialize, Default, Copy)]
-pub enum AccentWhich {
-    #[default]
-    ForeGround,
-    BackGround,
-}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum AccentColor {
