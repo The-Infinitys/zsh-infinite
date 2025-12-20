@@ -1,6 +1,6 @@
 use super::paths;
-use std::{env, fs, path::PathBuf};
 use regex::Regex;
+use std::{env, fs, path::PathBuf};
 
 pub fn uninstall() {
     let install_paths = match paths::get_install_paths() {
@@ -62,48 +62,73 @@ pub fn uninstall() {
             Ok(mut zshrc_content) => {
                 if install_paths.is_oh_my_zsh_install {
                     // Oh My Zsh uninstallation
-                    let theme_name = install_paths.theme_file_path.file_stem().unwrap().to_string_lossy();
-                    let zsh_root_path_str = paths::get_oh_my_zsh_root().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
-                    let zsh_custom_path_str = paths::get_oh_my_zsh_custom_theme_dir().map(|p| p.parent().unwrap().to_string_lossy().to_string()).unwrap_or_default();
-                    
+                    let theme_name = install_paths
+                        .theme_file_path
+                        .file_stem()
+                        .unwrap()
+                        .to_string_lossy();
+                    let zsh_root_path_str = paths::get_oh_my_zsh_root()
+                        .map(|p| p.to_string_lossy().to_string())
+                        .unwrap_or_default();
+                    let zsh_custom_path_str = paths::get_oh_my_zsh_custom_theme_dir()
+                        .map(|p| p.parent().unwrap().to_string_lossy().to_string())
+                        .unwrap_or_default();
+
                     let zsh_var_line = format!("ZSH=\"{}\"", zsh_root_path_str);
                     let zsh_custom_var_line = format!("ZSH_CUSTOM=\"{}\"", zsh_custom_path_str);
                     let source_oh_my_zsh_line = "source $ZSH/oh-my-zsh.sh";
 
-
                     let original_len = zshrc_content.len();
 
                     // Remove ZSH_THEME setting
-                    let theme_regex = Regex::new(&format!("(?m)^ZSH_THEME=\"{}\"$", regex::escape(&theme_name))).unwrap();
+                    let theme_regex = Regex::new(&format!(
+                        "(?m)^ZSH_THEME=\"{}\"$",
+                        regex::escape(&theme_name)
+                    ))
+                    .unwrap();
                     zshrc_content = theme_regex.replace_all(&zshrc_content, "").to_string();
 
                     // Remove ZSH and ZSH_CUSTOM variable settings if they match exactly what we added
-                    let zsh_var_regex = Regex::new(&format!("(?m)^{}$", regex::escape(&zsh_var_line))).unwrap();
+                    let zsh_var_regex =
+                        Regex::new(&format!("(?m)^{}$", regex::escape(&zsh_var_line))).unwrap();
                     zshrc_content = zsh_var_regex.replace_all(&zshrc_content, "").to_string();
 
-                    let zsh_custom_var_regex = Regex::new(&format!("(?m)^{}$", regex::escape(&zsh_custom_var_line))).unwrap();
-                    zshrc_content = zsh_custom_var_regex.replace_all(&zshrc_content, "").to_string();
-                    
+                    let zsh_custom_var_regex =
+                        Regex::new(&format!("(?m)^{}$", regex::escape(&zsh_custom_var_line)))
+                            .unwrap();
+                    zshrc_content = zsh_custom_var_regex
+                        .replace_all(&zshrc_content, "")
+                        .to_string();
+
                     // Remove source oh-my-zsh.sh
-                    let source_oh_my_zsh_regex = Regex::new(&format!("(?m)^{}$", regex::escape(source_oh_my_zsh_line))).unwrap();
-                    zshrc_content = source_oh_my_zsh_regex.replace_all(&zshrc_content, "").to_string();
+                    let source_oh_my_zsh_regex =
+                        Regex::new(&format!("(?m)^{}$", regex::escape(source_oh_my_zsh_line)))
+                            .unwrap();
+                    zshrc_content = source_oh_my_zsh_regex
+                        .replace_all(&zshrc_content, "")
+                        .to_string();
 
                     // Remove any consecutive blank lines
                     let blank_line_regex = Regex::new(r"\n\n+").unwrap();
-                    zshrc_content = blank_line_regex.replace_all(&zshrc_content, "\n").to_string();
-                    
+                    zshrc_content = blank_line_regex
+                        .replace_all(&zshrc_content, "\n")
+                        .to_string();
+
                     // Trim leading/trailing newlines
                     zshrc_content = zshrc_content.trim_start().trim_end().to_string();
 
                     if original_len != zshrc_content.len() {
                         match fs::write(&user_zshrc_path, zshrc_content.as_bytes()) {
-                            Ok(_) => println!("~/.zshrc updated to remove Oh My Zsh theme settings."),
+                            Ok(_) => {
+                                println!("~/.zshrc updated to remove Oh My Zsh theme settings.")
+                            }
                             Err(e) => eprintln!("Error writing to ~/.zshrc: {}", e),
                         }
                     } else {
-                        println!("Oh My Zsh theme settings not found in ~/.zshrc. Skipping modification.");
+                        println!(
+                            "Oh My Zsh theme settings not found in ~/.zshrc. Skipping modification."
+                        );
                     }
-
                 } else {
                     // Standalone uninstallation
                     // 3. Remove zshrc snippet file
@@ -124,7 +149,6 @@ pub fn uninstall() {
                             install_paths.zshrc_snippet_path
                         );
                     }
-
 
                     let source_line = format!(
                         "source \"{}\"",
@@ -204,7 +228,6 @@ pub fn uninstall() {
             }
         }
     }
-
 
     println!("\nUninstallation complete!");
 }

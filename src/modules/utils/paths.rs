@@ -44,12 +44,17 @@ pub fn get_install_paths() -> Result<InstallPaths, io::Error> {
     if is_oh_my_zsh_install {
         let home_dir = env::var("HOME").map_err(io::Error::other)?;
         let bin_dir = PathBuf::from(&home_dir).join(".local").join("bin"); // Oh My Zsh環境でもバイナリはユーザーローカルに置く
-        
+
         let theme_file_path = get_oh_my_zsh_custom_theme_dir()
-            .ok_or_else(|| io::Error::other("Could not determine Oh My Zsh custom theme directory."))?
+            .ok_or_else(|| {
+                io::Error::other("Could not determine Oh My Zsh custom theme directory.")
+            })?
             .join(ZSH_THEME_FILE_NAME);
 
-        let zshrc_snippet_path = PathBuf::from(&home_dir).join(".config").join(APPLICATION).join(ZSH_RC_SNIPPET_FILE_NAME);
+        let zshrc_snippet_path = PathBuf::from(&home_dir)
+            .join(".config")
+            .join(APPLICATION)
+            .join(ZSH_RC_SNIPPET_FILE_NAME);
 
         Ok(InstallPaths {
             bin_dir,

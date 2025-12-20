@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use tokio::process::Command;
 
-use crate::zsh::prompt::{PromptConnection, PromptSeparation};
 use super::color_scheme::PromptColorScheme;
+use crate::zsh::prompt::{PromptConnection, PromptSeparation};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, Copy)]
 pub enum AccentWhich {

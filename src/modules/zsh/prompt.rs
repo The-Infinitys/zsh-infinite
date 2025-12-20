@@ -127,8 +127,12 @@ impl Prompt {
     }
     pub fn render_left(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
         match prompt_contents.accent_which {
-            crate::zsh::theme::prompt_theme::AccentWhich::ForeGround => self.render_left_fg(prompt_contents),
-            crate::zsh::theme::prompt_theme::AccentWhich::BackGround => self.render_left_bg(prompt_contents),
+            crate::zsh::theme::prompt_theme::AccentWhich::ForeGround => {
+                self.render_left_fg(prompt_contents)
+            }
+            crate::zsh::theme::prompt_theme::AccentWhich::BackGround => {
+                self.render_left_bg(prompt_contents)
+            }
         }
     }
     pub fn render_right_fg(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
@@ -244,8 +248,12 @@ impl Prompt {
     }
     pub fn render_right(&self, prompt_contents: &PromptContents) -> ZshPromptBuilder {
         match prompt_contents.accent_which {
-            crate::zsh::theme::prompt_theme::AccentWhich::ForeGround => self.render_right_fg(prompt_contents),
-            crate::zsh::theme::prompt_theme::AccentWhich::BackGround => self.render_right_bg(prompt_contents),
+            crate::zsh::theme::prompt_theme::AccentWhich::ForeGround => {
+                self.render_right_fg(prompt_contents)
+            }
+            crate::zsh::theme::prompt_theme::AccentWhich::BackGround => {
+                self.render_right_bg(prompt_contents)
+            }
         }
     }
 }

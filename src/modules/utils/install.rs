@@ -34,7 +34,10 @@ pub fn install() {
 
     // Check if the current executable is already at the target path
     if current_exe_path == target_exe_path {
-        println!("Executable already exists at target path: {:?}", target_exe_path);
+        println!(
+            "Executable already exists at target path: {:?}",
+            target_exe_path
+        );
     } else {
         match fs::copy(&current_exe_path, &target_exe_path) {
             Ok(_) => println!("Executable copied to: {:?}", target_exe_path),
@@ -52,7 +55,10 @@ pub fn install() {
     let theme_template = include_str!("../../assets/scripts/infinite.zsh-theme").to_string();
     let theme_content = theme_template.replace(
         "{{RUN_DIR}}",
-        &target_exe_path.parent().expect("Binary path should have a parent directory").to_string_lossy(),
+        &target_exe_path
+            .parent()
+            .expect("Binary path should have a parent directory")
+            .to_string_lossy(),
     );
 
     // Create theme directory if it doesn't exist
@@ -104,12 +110,28 @@ pub fn install() {
         Ok(mut zshrc_content) => {
             if install_paths.is_oh_my_zsh_install {
                 // Oh My Zsh installation
-                let zsh_var = format!("ZSH=\"{}\"", paths::get_oh_my_zsh_root().unwrap().to_string_lossy());
-                let zsh_custom_var = format!("ZSH_CUSTOM=\"{}\"", paths::get_oh_my_zsh_custom_theme_dir().unwrap().parent().unwrap().to_string_lossy());
+                let zsh_var = format!(
+                    "ZSH=\"{}\"",
+                    paths::get_oh_my_zsh_root().unwrap().to_string_lossy()
+                );
+                let zsh_custom_var = format!(
+                    "ZSH_CUSTOM=\"{}\"",
+                    paths::get_oh_my_zsh_custom_theme_dir()
+                        .unwrap()
+                        .parent()
+                        .unwrap()
+                        .to_string_lossy()
+                );
                 let source_oh_my_zsh = "source $ZSH/oh-my-zsh.sh";
-                let theme_setting = format!("ZSH_THEME=\"{}\"", install_paths.theme_file_path.file_stem().unwrap().to_string_lossy());
+                let theme_setting = format!(
+                    "ZSH_THEME=\"{}\"",
+                    install_paths
+                        .theme_file_path
+                        .file_stem()
+                        .unwrap()
+                        .to_string_lossy()
+                );
 
-                
                 let mut _modified = false;
 
                 // Add ZSH variable if not present
@@ -129,18 +151,19 @@ pub fn install() {
                     zshrc_content.push_str(&format!("\n{}", source_oh_my_zsh));
                     _modified = true;
                 }
-                
+
                 // Set ZSH_THEME
                 // If ZSH_THEME is already set, replace it. Otherwise, add it.
                 let theme_regex = regex::Regex::new(r"(?m)^ZSH_THEME=.*$").unwrap();
                 if theme_regex.is_match(&zshrc_content) {
-                    zshrc_content = theme_regex.replace(&zshrc_content, theme_setting.as_str()).to_string();
+                    zshrc_content = theme_regex
+                        .replace(&zshrc_content, theme_setting.as_str())
+                        .to_string();
                     _modified = true;
                 } else {
                     zshrc_content.push_str(&format!("\n{}", theme_setting));
                     _modified = true;
                 }
-
 
                 if _modified {
                     match fs::write(&user_zshrc_path, zshrc_content) {
@@ -148,9 +171,10 @@ pub fn install() {
                         Err(e) => eprintln!("Error writing to ~/.zshrc: {}", e),
                     }
                 } else {
-                    println!("~/.zshrc already configured for Oh My Zsh theme. Skipping modification.");
+                    println!(
+                        "~/.zshrc already configured for Oh My Zsh theme. Skipping modification."
+                    );
                 }
-
             } else {
                 // Standalone installation
                 let source_line = format!(

@@ -59,10 +59,14 @@ pub fn prompt_for_rgb_color(prompt_text: &str, default_rgb: (u8, u8, u8)) -> (u8
 pub fn configure_colors(prompt_contents: &mut PromptContents) {
     println!("\n--- Configure Colors ---");
 
-    prompt_contents.color.bg = prompt_for_named_color("Background color", &prompt_contents.color.bg);
-    prompt_contents.color.fg = prompt_for_named_color("Foreground color", &prompt_contents.color.fg);
-    prompt_contents.color.pc = prompt_for_named_color("Primary color (pc)", &prompt_contents.color.pc);
-    prompt_contents.color.sc = prompt_for_named_color("Secondary color (sc)", &prompt_contents.color.sc);
+    prompt_contents.color.bg =
+        prompt_for_named_color("Background color", &prompt_contents.color.bg);
+    prompt_contents.color.fg =
+        prompt_for_named_color("Foreground color", &prompt_contents.color.fg);
+    prompt_contents.color.pc =
+        prompt_for_named_color("Primary color (pc)", &prompt_contents.color.pc);
+    prompt_contents.color.sc =
+        prompt_for_named_color("Secondary color (sc)", &prompt_contents.color.sc);
 
     let options = [
         "Single Color",
@@ -84,7 +88,10 @@ pub fn configure_colors(prompt_contents: &mut PromptContents) {
         .unwrap();
 
     prompt_contents.color.accent = match selection {
-        0 => super::color_scheme::AccentColor::Single(prompt_for_named_color("Color", &NamedColor::LightBlack)),
+        0 => super::color_scheme::AccentColor::Single(prompt_for_named_color(
+            "Color",
+            &NamedColor::LightBlack,
+        )),
         1 => {
             let color = prompt_for_named_color(
                 "Rainbow Start Color (Hex)",

@@ -1,15 +1,15 @@
 pub mod named_color_serde; // 既存のファイルをそのまま使用
 
-pub mod prompt_theme;
 pub mod color_scheme;
-pub mod gradient;
 pub mod config_ui;
+pub mod gradient;
+pub mod prompt_theme;
 
-use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
+use dialoguer::theme::ColorfulTheme;
 
-use crate::zsh::theme_manager;
 use crate::zsh::theme::prompt_theme::PromptContents;
+use crate::zsh::theme_manager;
 
 pub async fn main() {
     let mut current_theme = theme_manager::load_theme();
@@ -33,26 +33,34 @@ pub async fn main() {
             .unwrap();
 
         match selection {
-            0 => { // Add new prompt line
-                current_theme.prompt_contents_list.push(PromptContents::default());
+            0 => {
+                // Add new prompt line
+                current_theme
+                    .prompt_contents_list
+                    .push(PromptContents::default());
                 println!("New prompt line added.");
             }
-            1 => { // Remove last prompt line
+            1 => {
+                // Remove last prompt line
                 if current_theme.prompt_contents_list.pop().is_some() {
                     println!("Last prompt line removed.");
                 } else {
                     println!("No prompt lines to remove.");
                 }
             }
-            s if s >= 2 && s < options.len() - 1 => { // Configure Prompt Line
+            s if s >= 2 && s < options.len() - 1 => {
+                // Configure Prompt Line
                 let line_index = s - 2;
-                if let Some(prompt_contents) = current_theme.prompt_contents_list.get_mut(line_index) {
+                if let Some(prompt_contents) =
+                    current_theme.prompt_contents_list.get_mut(line_index)
+                {
                     configure_prompt_line(prompt_contents).await;
                 } else {
                     eprintln!("Invalid prompt line index selected.");
                 }
             }
-            s if s == options.len() - 1 => { // Save and Exit
+            s if s == options.len() - 1 => {
+                // Save and Exit
                 let _ = theme_manager::save_theme(&current_theme);
                 break;
             }
