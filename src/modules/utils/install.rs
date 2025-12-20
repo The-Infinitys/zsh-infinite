@@ -52,7 +52,7 @@ pub fn install() {
     let theme_template = include_str!("../../assets/scripts/infinite.zsh-theme").to_string();
     let theme_content = theme_template.replace(
         "{{RUN_DIR}}",
-        &target_exe_path.to_string_lossy(),
+        &target_exe_path.parent().expect("Binary path should have a parent directory").to_string_lossy(),
     );
 
     // Create theme directory if it doesn't exist
