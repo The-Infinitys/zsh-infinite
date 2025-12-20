@@ -119,12 +119,13 @@ pub enum SeparationColor {
         serialize_with = "serialize_gradient",
         deserialize_with = "deserialize_gradient"
     )]
-    Gradient(Vec<((u8, u8, u8), f32)>),
+    Gradient(GradientPart),
 }
+type GradientPart = Vec<((u8, u8, u8), f32)>;
 
 // --- Gradient用のカスタムシリアライズ/デシリアライズ ---
 
-fn serialize_gradient<S>(stops: &Vec<((u8, u8, u8), f32)>, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_gradient<S>(stops: &GradientPart, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -137,13 +138,13 @@ where
     seq.end()
 }
 
-fn deserialize_gradient<'de, D>(deserializer: D) -> Result<Vec<((u8, u8, u8), f32)>, D::Error>
+fn deserialize_gradient<'de, D>(deserializer: D) -> Result<GradientPart, D::Error>
 where
     D: Deserializer<'de>,
 {
     struct GradientVisitor;
     impl<'de> Visitor<'de> for GradientVisitor {
-        type Value = Vec<((u8, u8, u8), f32)>;
+        type Value = GradientPart;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
             formatter.write_str("a sequence of '#RRGGBB:stop' strings")
@@ -289,7 +290,7 @@ fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (u8, u8, u8) {
     )
 }
 
-fn create_default_rainbow_gradient() -> Vec<((u8, u8, u8), f32)> {
+fn create_default_rainbow_gradient() -> GradientPart {
     vec![
         ((255, 0, 0), 0.0),    // Red
         ((255, 127, 0), 0.16), // Orange
@@ -346,14 +347,16 @@ fn prompt_for_rgb_color(prompt_text: &str, default_rgb: (u8, u8, u8)) -> (u8, u8
         ))
         .interact_text()
         .map(|s| {
-            if s.starts_with('#') && s.len() == 7
+            if s.starts_with('#')
+                && s.len() == 7
                 && let (Ok(r), Ok(g), Ok(b)) = (
                     u8::from_str_radix(&s[1..3], 16),
                     u8::from_str_radix(&s[3..5], 16),
                     u8::from_str_radix(&s[5..7], 16),
-                ) {
-                    return (r, g, b);
-                }
+                )
+            {
+                return (r, g, b);
+            }
             default_rgb
         })
         .unwrap_or(default_rgb)
