@@ -323,19 +323,19 @@ impl Prompt {
             let sep_color = color_scheme.accent.get(color_pos);
             builder = builder.color_bg(sep_color).str(content).end_color_bg();
             if i < len - 1 {
+                let next_color_pos = (self.left_separation() + i + 2) as f32 / total;
+                let next_sep_color = color_scheme.accent.get(next_color_pos);
                 if seps.bold_separation {
                     builder = builder
                         .color(bg_color)
                         .color_bg(sep_color)
                         .str(&seps.mid_separator.sep_box().right)
                         .color_bg(bg_color)
-                        .color(sep_color)
+                        .color(next_sep_color)
                         .str(&seps.mid_separator.sep_box().right)
                         .end_color()
                         .end_color_bg();
                 } else {
-                    let next_color_pos = (self.left_separation() + i + 2) as f32 / total;
-                    let next_sep_color = color_scheme.accent.get(next_color_pos);
                     builder = builder
                         .color_bg(next_sep_color)
                         .color(bg_color)
