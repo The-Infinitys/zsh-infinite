@@ -99,7 +99,7 @@ async fn configure_prompt_line(prompt_contents: &mut PromptContents) {
     }
 }
 
-fn configure_prompt_content_list(contents: &mut Vec<PromptContent>, side: &str) {
+fn configure_prompt_content_list(contents: &mut [PromptContent], side: &str) {
     loop {
         println!("\n--- Configure {} Prompt Contents ---", side);
         let mut options: Vec<String> = contents
