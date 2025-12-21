@@ -72,8 +72,9 @@ pub async fn left() {
             UnicodeWidthStr::width(prompt_contents.connection.to_string().as_str());
         let side_decor_width =
             UnicodeWidthStr::width(curved_lines.top_left.as_str()) + conn_line_width;
-        let connection_len =
-            terminal_width.saturating_sub(left_width + right_width + side_decor_width * 2);
+        let connection_len = (terminal_width * 2)
+            .saturating_sub(left_width + right_width + side_decor_width * 2)
+            % terminal_width;
         let connection_str = prompt_contents // `theme.connection` から `prompt_contents.connection` に変更
             .connection
             .to_string()
