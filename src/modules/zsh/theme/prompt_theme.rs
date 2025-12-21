@@ -111,7 +111,7 @@ impl PromptContent {
 
         // Command::new はデフォルトで現在のプロセスの環境変数を継承します
         let mut command = Command::new(&self.cmd);
-        
+
         // 引数の設定
         command.args(&self.args);
 

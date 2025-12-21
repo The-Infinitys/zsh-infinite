@@ -123,7 +123,8 @@ pub fn install() {
                     .to_string_lossy();
 
                 let zsh_var_line = format!("ZSH=\"{}\"", zsh_root.to_string_lossy());
-                let zsh_custom_var_line = format!("ZSH_CUSTOM=\"{}\"", zsh_custom_parent.to_string_lossy());
+                let zsh_custom_var_line =
+                    format!("ZSH_CUSTOM=\"{}\"", zsh_custom_parent.to_string_lossy());
                 let theme_setting_line = format!("export ZSH_THEME=\"{}\"", theme_name); // export を追加
                 let source_oh_my_zsh_line_exact = "source $ZSH/oh-my-zsh.sh";
 
@@ -140,14 +141,15 @@ pub fn install() {
 
                 for line in zshrc_content.lines() {
                     let trimmed_line = line.trim();
-                    
+
                     // 既存の Oh My Zsh 関連の行をスキップ
-                    if trimmed_line.starts_with("ZSH=") ||
-                       trimmed_line.starts_with("ZSH_CUSTOM=") ||
-                       trimmed_line.starts_with("ZSH_THEME=") ||
-                       trimmed_line.starts_with("export ZSH_THEME=")
+                    if trimmed_line.starts_with("ZSH=")
+                        || trimmed_line.starts_with("ZSH_CUSTOM=")
+                        || trimmed_line.starts_with("ZSH_THEME=")
+                        || trimmed_line.starts_with("export ZSH_THEME=")
                     {
-                        if !omz_block_inserted { // まだブロックが挿入されていなければ、既存の変更があるので_modifiedをセット
+                        if !omz_block_inserted {
+                            // まだブロックが挿入されていなければ、既存の変更があるので_modifiedをセット
                             _modified = true;
                         }
                         continue; // これらの行は新しいブロックとして挿入するのでスキップ
@@ -163,7 +165,7 @@ pub fn install() {
                         new_zshrc_content_lines.push(line.to_string());
                     }
                 }
-                
+
                 // もし source $ZSH/oh-my-zsh.sh が元のファイル中に見つからなかった場合、末尾に追加
                 if !oh_my_zsh_source_found_in_original && !omz_block_inserted {
                     if !new_zshrc_content_lines.is_empty() {
@@ -194,9 +196,10 @@ pub fn install() {
                 );
                 let installer_comment_start = "# Added by zsh-infinite installer";
 
-                let mut zshrc_lines: Vec<String> = zshrc_content.lines().map(|s| s.to_string()).collect();
+                let mut zshrc_lines: Vec<String> =
+                    zshrc_content.lines().map(|s| s.to_string()).collect();
                 let mut source_line_present = false;
-                
+
                 // 既存の source line をチェックし、削除
                 let original_line_count = zshrc_lines.len();
                 zshrc_lines.retain(|line| {
