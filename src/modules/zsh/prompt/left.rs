@@ -17,22 +17,23 @@ pub async fn left() {
         let curved_lines = PromptCurveLine::from(default_prompt_contents.connection);
         let h = &curved_lines.horizontal;
 
-        let start = ZshPromptBuilder::new()
-            .color(default_prompt_contents.color.sc)
-            .str(&curved_lines.top_left)
-            .str(h)
-            .str(h)
-            .str(&curved_lines.top_right)
-            .end_color();
-        println!("{}", start.build());
+        let mut start_builder = ZshPromptBuilder::new().color(default_prompt_contents.color.sc);
+        if default_prompt_contents.left_cap_enabled {
+            start_builder = start_builder.str(&curved_lines.top_left);
+        }
+        start_builder = start_builder.str(h).str(h);
+        if default_prompt_contents.right_cap_enabled {
+            start_builder = start_builder.str(&curved_lines.top_right);
+        }
+        start_builder = start_builder.end_color();
+        println!("{}", start_builder.build());
 
-        let end = ZshPromptBuilder::new()
-            .color(default_prompt_contents.color.sc)
-            .str(&curved_lines.bottom_left)
-            .str(h)
-            .str(" ")
-            .end_color();
-        print!("{}", end.build());
+        let mut end_builder = ZshPromptBuilder::new().color(default_prompt_contents.color.sc);
+        if default_prompt_contents.left_cap_enabled {
+            end_builder = end_builder.str(&curved_lines.bottom_left);
+        }
+        end_builder = end_builder.str(h).str(" ").end_color();
+        print!("{}", end_builder.build());
         return;
     }
 
@@ -70,57 +71,79 @@ pub async fn left() {
         let right_width = right_content.len();
         let conn_line_width =
             UnicodeWidthStr::width(prompt_contents.connection.to_string().as_str());
-        let side_decor_width =
-            UnicodeWidthStr::width(curved_lines.top_left.as_str()) + conn_line_width;
-        let connection_len = (terminal_width * 2)
-            .saturating_sub(left_width + right_width + side_decor_width * 2)
-            % terminal_width;
-        let connection_str = prompt_contents // `theme.connection` から `prompt_contents.connection` に変更
+
+        // キャップが有効な場合にのみサイドデコレーションの幅を考慮
+        let mut side_decor_width = 0;
+        if prompt_contents.left_cap_enabled {
+            side_decor_width += UnicodeWidthStr::width(curved_lines.top_left.as_str());
+        }
+        if prompt_contents.right_cap_enabled {
+            side_decor_width += UnicodeWidthStr::width(curved_lines.top_right.as_str());
+        }
+        side_decor_width += conn_line_width; // Horizontal line segment between cap and content
+
+        let connection_len =
+            terminal_width.saturating_sub(left_width + right_width + side_decor_width);
+
+        let connection_str = prompt_contents
             .connection
             .to_string()
             .repeat(connection_len / conn_line_width);
+
         eprintln!("left: {}", left_width);
         eprintln!("right {}", right_width);
         eprintln!("{}", connection_len / conn_line_width);
+
         let mut row_builder = ZshPromptBuilder::new();
-        row_builder = row_builder.color(prompt_contents.color.sc); // `theme.color.sc` から `prompt_contents.color.sc` に変更
+        row_builder = row_builder.color(prompt_contents.color.sc);
 
-        // 最初の行は TopLeft、それ以外は CrossLeft
-        if i == 0 {
-            row_builder = row_builder.str(&curved_lines.top_left);
-        } else {
-            row_builder = row_builder.str(&curved_lines.cross_left);
+        // 左キャップの描画
+        if prompt_contents.left_cap_enabled {
+            if i == 0 {
+                row_builder = row_builder.str(&curved_lines.top_left);
+            } else {
+                row_builder = row_builder.str(&curved_lines.cross_left);
+            }
         }
+        row_builder = row_builder.str(h); // キャップの有無にかかわらず水平線は描画
 
-        let final_prompt = row_builder
-            .str(h)
+        let mut final_prompt = row_builder
             .end_color()
             .connect(left_content)
-            .color(prompt_contents.color.pc) // `theme.color.pc` から `prompt_contents.color.pc` に変更
+            .color(prompt_contents.color.pc)
             .str(&connection_str)
             .end_color()
             .connect(right_content)
-            .color(prompt_contents.color.sc) // `theme.color.sc` から `prompt_contents.color.sc` に変更
-            .str(h)
-            .str(if i == 0 {
+            .color(prompt_contents.color.sc);
+
+        final_prompt = final_prompt.str(h); // キャップの有無にかかわらず水平線は描画
+        // 右キャップの描画
+        if prompt_contents.right_cap_enabled {
+            final_prompt = final_prompt.str(if i == 0 {
                 &curved_lines.top_right
             } else {
                 &curved_lines.cross_right
-            })
-            .end_color();
+            });
+        }
+        final_prompt = final_prompt.end_color();
 
         println!("{}", final_prompt.build());
     }
 
     // 最終行の描画
-    let default_prompt_contents = crate::zsh::theme::prompt_theme::PromptContents::default();
-    let curved_lines = PromptCurveLine::from(default_prompt_contents.connection);
+    // prompt_contents_listが空でない場合、最後のPromptContentsの設定を使用
+    let last_prompt_contents = theme
+        .prompt_contents_list
+        .last()
+        .cloned()
+        .unwrap_or_else(crate::zsh::theme::prompt_theme::PromptContents::default);
+    let curved_lines = PromptCurveLine::from(last_prompt_contents.connection);
     let h = &curved_lines.horizontal;
-    let end = ZshPromptBuilder::new()
-        .color(default_prompt_contents.color.sc)
-        .str(&curved_lines.bottom_left)
-        .str(h)
-        .str(" ")
-        .end_color();
-    print!("{}", end.build())
+
+    let mut end_builder = ZshPromptBuilder::new().color(last_prompt_contents.color.sc);
+    if last_prompt_contents.left_cap_enabled {
+        end_builder = end_builder.str(&curved_lines.bottom_left);
+    }
+    end_builder = end_builder.str(h).str(" ").end_color();
+    print!("{}", end_builder.build());
 }

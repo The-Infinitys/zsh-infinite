@@ -33,6 +33,8 @@ pub struct PromptSegmentSeparators {
     pub start_separator: PromptSeparation,
     pub mid_separator: PromptSeparation,
     pub end_separator: PromptSeparation,
+    #[serde(default)]
+    pub separator_bold: bool,
 }
 
 impl Default for PromptSegmentSeparators {
@@ -41,6 +43,7 @@ impl Default for PromptSegmentSeparators {
             start_separator: PromptSeparation::Sharp,
             mid_separator: PromptSeparation::Sharp,
             end_separator: PromptSeparation::Sharp,
+            separator_bold: false,
         }
     }
 }
@@ -57,6 +60,10 @@ pub struct PromptContents {
     pub left_segment_separators: PromptSegmentSeparators,
     pub right_segment_separators: PromptSegmentSeparators,
     pub accent_which: AccentWhich,
+    #[serde(default)]
+    pub left_cap_enabled: bool,
+    #[serde(default)]
+    pub right_cap_enabled: bool,
 }
 
 impl Default for PromptContents {
@@ -92,6 +99,8 @@ impl Default for PromptContents {
             left_segment_separators: PromptSegmentSeparators::default(),
             right_segment_separators: PromptSegmentSeparators::default(),
             accent_which: AccentWhich::default(),
+            left_cap_enabled: true,
+            right_cap_enabled: true,
         }
     }
 }

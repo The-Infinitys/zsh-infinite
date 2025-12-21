@@ -1,5 +1,5 @@
 use dialoguer::theme::ColorfulTheme;
-use dialoguer::{Input, Select};
+use dialoguer::{Confirm, Input, Select};
 use std::fmt;
 use zsh_seq::NamedColor;
 
@@ -189,6 +189,7 @@ pub fn configure_segment_separators(segment_separators: &mut PromptSegmentSepara
             "Start Separator",
             "Mid Separator",
             "End Separator",
+            "Separator Boldness", // New option
             "Back to Separation Menu",
         ];
         let selection = Select::with_theme(&ColorfulTheme::default())
@@ -210,7 +211,16 @@ pub fn configure_segment_separators(segment_separators: &mut PromptSegmentSepara
                 segment_separators.end_separator =
                     select_prompt_separation_style(&segment_separators.end_separator);
             }
-            3 => break,
+            3 => {
+                // Configure boldness
+                segment_separators.separator_bold =
+                    dialoguer::Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt("Use bold separators?")
+                        .default(segment_separators.separator_bold)
+                        .interact()
+                        .unwrap();
+            }
+            4 => break, // Index shifted
             _ => unreachable!(),
         }
     }
@@ -222,6 +232,8 @@ pub fn configure_separation(prompt_contents: &mut PromptContents) {
         let options = [
             "Left Segment Separators",
             "Right Segment Separators",
+            "Left Cap Enabled",  // New option
+            "Right Cap Enabled", // New option
             "Back to Prompt Line Menu",
         ];
         let selection = Select::with_theme(&ColorfulTheme::default())
@@ -233,7 +245,23 @@ pub fn configure_separation(prompt_contents: &mut PromptContents) {
         match selection {
             0 => configure_segment_separators(&mut prompt_contents.left_segment_separators),
             1 => configure_segment_separators(&mut prompt_contents.right_segment_separators),
-            2 => break,
+            2 => {
+                // Configure left cap
+                prompt_contents.left_cap_enabled = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enable left prompt cap?")
+                    .default(prompt_contents.left_cap_enabled)
+                    .interact()
+                    .unwrap();
+            }
+            3 => {
+                // Configure right cap
+                prompt_contents.right_cap_enabled = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enable right prompt cap?")
+                    .default(prompt_contents.right_cap_enabled)
+                    .interact()
+                    .unwrap();
+            }
+            4 => break, // Index shifted
             _ => unreachable!(),
         }
     }

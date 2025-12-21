@@ -14,12 +14,16 @@ pub async fn right() {
 
     let curved_lines = PromptCurveLine::from(prompt_contents.connection);
     let h = &curved_lines.horizontal;
-    let b = &curved_lines.bottom_right;
-    let builder = ZshPromptBuilder::new()
+
+    let mut builder = ZshPromptBuilder::new()
         .color(prompt_contents.color.sc)
-        .str(h)
-        .str(b)
-        .end_color();
+        .str(h);
+
+    // 右キャップが有効な場合のみ描画
+    if prompt_contents.right_cap_enabled {
+        builder = builder.str(&curved_lines.bottom_right);
+    }
+    builder = builder.end_color();
 
     println!("{}", builder.build());
 }

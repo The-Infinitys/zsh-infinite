@@ -42,43 +42,84 @@ impl Prompt {
         let end_sep_color = color_scheme
             .accent
             .get(self.left_separation() as f32 / (self.total_separation() + 1) as f32);
-        let start_cap = ZshPromptBuilder::new()
-            .end_color_bg()
-            .color(start_sep_color)
-            .str(&left_separators.start_separator.sep_box().right)
-            .end_color()
-            .color_bg(start_sep_color)
-            .color(bg_color)
-            .str(&left_separators.start_separator.sep_box().right)
-            .end_color()
-            .end_color_bg();
-        let end_cap = ZshPromptBuilder::new()
-            .end_color_bg()
-            .end_color()
-            .color_bg(end_sep_color)
-            .color(bg_color)
-            .str(&left_separators.end_separator.sep_box().left)
-            .end_color()
-            .end_color_bg()
-            .color(end_sep_color)
-            .str(&left_separators.end_separator.sep_box().left)
-            .end_color();
+
+        let start_cap = if prompt_contents.left_cap_enabled {
+            let mut builder = ZshPromptBuilder::new()
+                .end_color_bg()
+                .color(start_sep_color);
+            if left_separators.separator_bold {
+                builder = builder.bold();
+            }
+            builder = builder.str(&left_separators.start_separator.sep_box().right);
+            if left_separators.separator_bold {
+                builder = builder.end_bold();
+            }
+            builder = builder
+                .end_color()
+                .color_bg(start_sep_color)
+                .color(bg_color);
+            if left_separators.separator_bold {
+                builder = builder.bold();
+            }
+            builder = builder.str(&left_separators.start_separator.sep_box().right);
+            if left_separators.separator_bold {
+                builder = builder.end_bold();
+            }
+            builder.end_color_bg()
+        } else {
+            ZshPromptBuilder::new()
+        };
+
+        let end_cap = if prompt_contents.left_cap_enabled {
+            let mut builder = ZshPromptBuilder::new()
+                .end_color_bg()
+                .end_color()
+                .color_bg(end_sep_color)
+                .color(bg_color);
+            if left_separators.separator_bold {
+                builder = builder.bold();
+            }
+            builder = builder.str(&left_separators.end_separator.sep_box().left);
+            if left_separators.separator_bold {
+                builder = builder.end_bold();
+            }
+            builder = builder.end_color_bg().color(end_sep_color);
+            if left_separators.separator_bold {
+                builder = builder.bold();
+            }
+            builder = builder.str(&left_separators.end_separator.sep_box().left);
+            if left_separators.separator_bold {
+                builder = builder.end_bold();
+            }
+            builder.end_color()
+        } else {
+            ZshPromptBuilder::new()
+        };
+
         let mut builder = ZshPromptBuilder::new().connect(start_cap);
         builder = self
             .left
             .iter()
             .enumerate()
-            .fold(builder, |b, (i, content)| {
-                let b = b.end_color().color_bg(bg_color).str(content).end_color();
+            .fold(builder, |mut b, (i, content)| {
+                b = b.end_color().color_bg(bg_color).str(content).end_color();
                 if i == self.left.len() - 1 {
                     b
                 } else {
-                    b.color(
+                    let mut mid_sep_builder = ZshPromptBuilder::new().color(
                         color_scheme
                             .accent
                             .get((i + 1) as f32 / (self.total_separation() + 1) as f32),
-                    )
-                    .str(&left_separators.mid_separator.sep_line().left)
+                    );
+                    if left_separators.separator_bold {
+                        mid_sep_builder = mid_sep_builder.bold();
+                    }
+                    mid_sep_builder =
+                        mid_sep_builder.str(&left_separators.mid_separator.sep_line().left);
+                    if left_separators.separator_bold {
+                        mid_sep_builder = mid_sep_builder.end_bold();
+                    }
+                    b.connect(mid_sep_builder)
                 }
             });
         builder = builder.connect(end_cap);
@@ -91,37 +132,70 @@ impl Prompt {
         let color_scheme = &prompt_contents.color;
         let left_separators = &prompt_contents.left_segment_separators;
 
-        let start_cap = ZshPromptBuilder::new()
-            .color(color_scheme.accent.get(0.0))
-            .str(&left_separators.start_separator.sep_box().right)
-            .end_color();
+        let start_cap = if prompt_contents.left_cap_enabled {
+            let mut builder = ZshPromptBuilder::new().color(color_scheme.accent.get(0.0));
+            if left_separators.separator_bold {
+                builder = builder.bold();
+            }
+            builder = builder.str(&left_separators.start_separator.sep_box().right);
+            if left_separators.separator_bold {
+                builder = builder.end_bold();
+            }
+            builder.end_color()
+        } else {
+            ZshPromptBuilder::new()
+        };
+
         let content_len = self.left.len();
         let mut builder = ZshPromptBuilder::new().connect(start_cap);
         builder = self
             .left
             .iter()
             .enumerate()
-            .fold(builder, |b, (i, content)| {
-                let mut b = b
+            .fold(builder, |mut b, (i, content)| {
+                let mut content_builder = ZshPromptBuilder::new()
                     .end_color()
-                    .color_bg(color_scheme.accent.get(i as f32 / content_len as f32))
-                    .str(content)
-                    .end_color_bg();
-                if i == content_len - 1 {
-                    b = b
-                        .color(color_scheme.accent.get(i as f32 / content_len as f32))
-                        .end_color_bg()
-                        .str(&left_separators.end_separator.sep_box().left)
-                        .end_color();
-                } else {
-                    b = b
-                        .color(color_scheme.accent.get(i as f32 / content_len as f32))
-                        .color_bg(color_scheme.accent.get((i + 1) as f32 / content_len as f32))
-                        .str(&left_separators.mid_separator.sep_box().left)
-                        .end_color()
-                        .end_color_bg();
+                    .color_bg(color_scheme.accent.get(i as f32 / content_len as f32));
+                if left_separators.separator_bold {
+                    // content自体は太字にしないが、セパレータと一貫性を持たせるため
+                    content_builder = content_builder.bold();
                 }
-                b
+                content_builder = content_builder.str(content);
+                if left_separators.separator_bold {
+                    content_builder = content_builder.end_bold();
+                }
+                b = b.connect(content_builder.end_color_bg());
+
+                if i == content_len - 1 {
+                    if prompt_contents.left_cap_enabled {
+                        let mut end_cap_builder = ZshPromptBuilder::new()
+                            .color(color_scheme.accent.get(i as f32 / content_len as f32));
+                        if left_separators.separator_bold {
+                            end_cap_builder = end_cap_builder.bold();
+                        }
+                        end_cap_builder =
+                            end_cap_builder.str(&left_separators.end_separator.sep_box().left);
+                        if left_separators.separator_bold {
+                            end_cap_builder = end_cap_builder.end_bold();
+                        }
+                        b.connect(end_cap_builder.end_color())
+                    } else {
+                        b
+                    }
+                } else {
+                    let mut mid_sep_builder = ZshPromptBuilder::new()
+                        .color(color_scheme.accent.get(i as f32 / content_len as f32))
+                        .color_bg(color_scheme.accent.get((i + 1) as f32 / content_len as f32));
+                    if left_separators.separator_bold {
+                        mid_sep_builder = mid_sep_builder.bold();
+                    }
+                    mid_sep_builder =
+                        mid_sep_builder.str(&left_separators.mid_separator.sep_box().left);
+                    if left_separators.separator_bold {
+                        mid_sep_builder = mid_sep_builder.end_bold();
+                    }
+                    b.connect(mid_sep_builder.end_color().end_color_bg())
+                }
             });
         builder
     }
@@ -153,26 +227,56 @@ impl Prompt {
             .get(1.0 - 1.0 / (self.total_separation() + 1) as f32);
 
         // 右プロンプトの開始キャップ（左側の境界）
-        let start_cap = ZshPromptBuilder::new()
-            .color(start_sep_color)
-            .str(&right_separators.start_separator.sep_box().right)
-            .end_color()
-            .color_bg(start_sep_color)
-            .color(bg_color)
-            .str(&right_separators.start_separator.sep_box().right)
-            .end_color();
+        let start_cap = if prompt_contents.right_cap_enabled {
+            let mut builder = ZshPromptBuilder::new().color(start_sep_color);
+            if right_separators.separator_bold {
+                builder = builder.bold();
+            }
+            builder = builder.str(&right_separators.start_separator.sep_box().right);
+            if right_separators.separator_bold {
+                builder = builder.end_bold();
+            }
+            builder = builder
+                .end_color()
+                .color_bg(start_sep_color)
+                .color(bg_color);
+            if right_separators.separator_bold {
+                builder = builder.bold();
+            }
+            builder = builder.str(&right_separators.start_separator.sep_box().right);
+            if right_separators.separator_bold {
+                builder = builder.end_bold();
+            }
+            builder.end_color()
+        } else {
+            ZshPromptBuilder::new()
+        };
 
         // 右プロンプトの終了キャップ（右端の境界）
-        let end_cap = ZshPromptBuilder::new()
-            .end_color_bg()
-            .color_bg(end_sep_color)
-            .color(bg_color)
-            .str(&right_separators.end_separator.sep_box().left)
-            .end_color_bg()
-            .end_color()
-            .color(end_sep_color)
-            .str(&right_separators.end_separator.sep_box().left)
-            .end_color();
+        let end_cap = if prompt_contents.right_cap_enabled {
+            let mut builder = ZshPromptBuilder::new()
+                .end_color_bg()
+                .color_bg(end_sep_color)
+                .color(bg_color);
+            if right_separators.separator_bold {
+                builder = builder.bold();
+            }
+            builder = builder.str(&right_separators.end_separator.sep_box().left);
+            if right_separators.separator_bold {
+                builder = builder.end_bold();
+            }
+            builder = builder.end_color_bg().end_color().color(end_sep_color);
+            if right_separators.separator_bold {
+                builder = builder.bold();
+            }
+            builder = builder.str(&right_separators.end_separator.sep_box().left);
+            if right_separators.separator_bold {
+                builder = builder.end_bold();
+            }
+            builder.end_color()
+        } else {
+            ZshPromptBuilder::new()
+        };
 
         let mut builder = ZshPromptBuilder::new().connect(start_cap);
 
@@ -181,8 +285,8 @@ impl Prompt {
             .right
             .iter()
             .enumerate()
-            .fold(builder, |b, (i, content)| {
-                let b = b.color_bg(bg_color).str(content);
+            .fold(builder, |mut b, (i, content)| {
+                b = b.color_bg(bg_color).str(content);
 
                 // 最後の要素でなければセパレーターを追加
                 if i == self.right.len() - 1 {
@@ -191,9 +295,17 @@ impl Prompt {
                     // 色の計算位置を右側のオフセットに合わせる
                     let color_pos = (self.left_separation() + i + 2) as f32
                         / (self.total_separation() + 1) as f32;
-                    b.color(color_scheme.accent.get(color_pos))
-                        .str(&right_separators.mid_separator.sep_line().right) // 右用セパレーター
-                        .end_color()
+                    let mut mid_sep_builder =
+                        ZshPromptBuilder::new().color(color_scheme.accent.get(color_pos));
+                    if right_separators.separator_bold {
+                        mid_sep_builder = mid_sep_builder.bold();
+                    }
+                    mid_sep_builder =
+                        mid_sep_builder.str(&right_separators.mid_separator.sep_line().right);
+                    if right_separators.separator_bold {
+                        mid_sep_builder = mid_sep_builder.end_bold();
+                    }
+                    b.connect(mid_sep_builder.end_color())
                 }
                 .end_color_bg()
             });
@@ -208,41 +320,86 @@ impl Prompt {
         let right_separators = &prompt_contents.right_segment_separators;
 
         let content_len = self.left.len() + self.right.len();
-        let start_cap = ZshPromptBuilder::new()
-            .color(
+        let start_cap = if prompt_contents.right_cap_enabled {
+            let mut builder = ZshPromptBuilder::new().color(
                 color_scheme
                     .accent
                     .get((self.left.len() + 1) as f32 / content_len as f32),
-            )
-            .str(&right_separators.start_separator.sep_box().right)
-            .end_color();
+            );
+            if right_separators.separator_bold {
+                builder = builder.bold();
+            }
+            builder = builder.str(&right_separators.start_separator.sep_box().right);
+            if right_separators.separator_bold {
+                builder = builder.end_bold();
+            }
+            builder.end_color()
+        } else {
+            ZshPromptBuilder::new()
+        };
+
         let mut builder = ZshPromptBuilder::new().connect(start_cap);
         builder = self
             .right
             .iter()
             .enumerate()
-            .fold(builder, |b, (i, content)| {
-                let i = i + self.left.len() + 1;
-                let mut b = b
-                    .end_color()
-                    .color_bg(color_scheme.accent.get(i as f32 / content_len as f32))
-                    .str(content)
-                    .end_color_bg();
-                if i == content_len {
-                    b = b
-                        .color(color_scheme.accent.get(i as f32 / content_len as f32))
-                        .end_color_bg()
-                        .str(&right_separators.end_separator.sep_box().left)
-                        .end_color();
-                } else {
-                    b = b
-                        .color(color_scheme.accent.get(i as f32 / content_len as f32))
-                        .color_bg(color_scheme.accent.get((i + 1) as f32 / content_len as f32))
-                        .str(&right_separators.mid_separator.sep_box().left)
-                        .end_color()
-                        .end_color_bg();
+            .fold(builder, |mut b, (i, content)| {
+                let i_global = i + self.left.len() + 1; // 全体でのインデックス
+                let mut content_builder = ZshPromptBuilder::new().end_color().color_bg(
+                    color_scheme
+                        .accent
+                        .get(i_global as f32 / content_len as f32),
+                );
+                if right_separators.separator_bold {
+                    content_builder = content_builder.bold();
                 }
-                b
+                content_builder = content_builder.str(content);
+                if right_separators.separator_bold {
+                    content_builder = content_builder.end_bold();
+                }
+                b = b.connect(content_builder.end_color_bg());
+
+                if i_global == content_len {
+                    if prompt_contents.right_cap_enabled {
+                        let mut end_cap_builder = ZshPromptBuilder::new().color(
+                            color_scheme
+                                .accent
+                                .get(i_global as f32 / content_len as f32),
+                        );
+                        if right_separators.separator_bold {
+                            end_cap_builder = end_cap_builder.bold();
+                        }
+                        end_cap_builder =
+                            end_cap_builder.str(&right_separators.end_separator.sep_box().left);
+                        if right_separators.separator_bold {
+                            end_cap_builder = end_cap_builder.end_bold();
+                        }
+                        b.connect(end_cap_builder.end_color())
+                    } else {
+                        b
+                    }
+                } else {
+                    let mut mid_sep_builder = ZshPromptBuilder::new()
+                        .color(
+                            color_scheme
+                                .accent
+                                .get(i_global as f32 / content_len as f32),
+                        )
+                        .color_bg(
+                            color_scheme
+                                .accent
+                                .get((i_global + 1) as f32 / content_len as f32),
+                        );
+                    if right_separators.separator_bold {
+                        mid_sep_builder = mid_sep_builder.bold();
+                    }
+                    mid_sep_builder =
+                        mid_sep_builder.str(&right_separators.mid_separator.sep_box().left);
+                    if right_separators.separator_bold {
+                        mid_sep_builder = mid_sep_builder.end_bold();
+                    }
+                    b.connect(mid_sep_builder.end_color().end_color_bg())
+                }
             });
         builder
     }
