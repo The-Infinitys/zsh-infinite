@@ -31,7 +31,9 @@ pub fn get_oh_my_zsh_root() -> Option<PathBuf> {
 pub fn get_oh_my_zsh_custom_theme_dir() -> Option<PathBuf> {
     if let Ok(zsh_custom) = env::var("ZSH_CUSTOM") {
         Some(PathBuf::from(zsh_custom).join("themes"))
-    } else { get_oh_my_zsh_root().map(|zsh_root| zsh_root.join("custom").join("themes")) }
+    } else {
+        get_oh_my_zsh_root().map(|zsh_root| zsh_root.join("custom").join("themes"))
+    }
 }
 
 pub fn get_install_paths() -> Result<InstallPaths, io::Error> {
