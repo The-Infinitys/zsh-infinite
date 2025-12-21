@@ -16,5 +16,5 @@ pub async fn transient(exit_code: Option<i32>) {
         .end_color()
         .reset_styles();
 
-    print!("{}", prompt.build());
+    print!("{}", prompt.text());
 }

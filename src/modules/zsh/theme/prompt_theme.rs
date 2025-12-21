@@ -114,7 +114,9 @@ impl PromptContent {
 
         // 引数の設定
         command.args(&self.args);
-
+        if let Ok(current_dir) = std::env::current_dir() {
+            command.current_dir(current_dir);
+        }
         // 個別の環境変数を適用（継承したものに追加・上書き）
         for env_map in &self.envs {
             for (key, value) in env_map {

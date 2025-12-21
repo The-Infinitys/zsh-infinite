@@ -65,13 +65,11 @@ pub async fn left() {
 
         let left_content = prompt.render_left(prompt_contents);
         let right_content = prompt.render_right(prompt_contents);
-
         let terminal_width = terminal::size().map(|(w, _)| w).unwrap_or(80) as usize;
-        let left_width =
-            UnicodeWidthStr::width(strip_ansi_codes(left_content.text().as_str()).as_str());
-        let right_width =
-            UnicodeWidthStr::width(strip_ansi_codes(right_content.text().as_str()).as_str());
-        let conn_line_width = UnicodeWidthStr::width(curved_lines.horizontal.as_str());
+        let left_width = left_content.len();
+        let right_width = right_content.len();
+        let conn_line_width =
+            UnicodeWidthStr::width(prompt_contents.connection.to_string().as_str());
         let side_decor_width =
             UnicodeWidthStr::width(curved_lines.top_left.as_str()) + conn_line_width;
         let connection_len =
@@ -80,7 +78,9 @@ pub async fn left() {
             .connection
             .to_string()
             .repeat(connection_len / conn_line_width);
-
+        eprintln!("left: {}", left_width);
+        eprintln!("right {}", right_width);
+        eprintln!("{}", connection_len / conn_line_width);
         let mut row_builder = ZshPromptBuilder::new();
         row_builder = row_builder.color(prompt_contents.color.sc); // `theme.color.sc` から `prompt_contents.color.sc` に変更
 
@@ -121,10 +121,5 @@ pub async fn left() {
         .str(h)
         .str(" ")
         .end_color();
-    print!("{}", end.build())
-}
-
-fn strip_ansi_codes(text: &str) -> String {
-    let re = regex::Regex::new(r"\x1b\[[0-9;]*[mK]").unwrap();
-    re.replace_all(text, "").to_string()
+    print!("{}", end.text())
 }
