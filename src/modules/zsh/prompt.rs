@@ -470,7 +470,7 @@ impl From<PromptConnection> for PromptCurveLine {
                 cross_right: "╣".to_string(),
             },
             // 太線
-            PromptConnection::Bold | PromptConnection::Bar => Self {
+            PromptConnection::Bold => Self {
                 top_left: "┏".to_string(),
                 top_right: "┓".to_string(),
                 bottom_left: "┗".to_string(),
@@ -490,6 +490,17 @@ impl From<PromptConnection> for PromptCurveLine {
                 vertical: "│".to_string(),
                 cross_left: "├".to_string(),
                 cross_right: "┤".to_string(),
+            },
+            // バー
+            PromptConnection::Bar => Self {
+                top_left: "".to_string(),
+                top_right: "".to_string(),
+                bottom_left: "".to_string(),
+                bottom_right: "".to_string(),
+                horizontal: "█".to_string(),
+                vertical: "█".to_string(),
+                cross_left: "█".to_string(),
+                cross_right: "█".to_string(),
             },
             // 丸角（デフォルト）
             _ => Self {
