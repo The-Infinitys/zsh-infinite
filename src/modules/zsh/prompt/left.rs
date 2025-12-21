@@ -121,5 +121,5 @@ pub async fn left() {
         .str(h)
         .str(" ")
         .end_color();
-    print!("{}", end.text())
+    print!("{}", end.build())
 }
