@@ -41,7 +41,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+        with:
+          submodules: true
+          fetch-depth: 0
       - name: Build
         uses: houseabsolute/actions-rust-cross@v1
         with:
