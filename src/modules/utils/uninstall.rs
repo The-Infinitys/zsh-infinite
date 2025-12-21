@@ -212,7 +212,7 @@ pub fn uninstall() {
             .expect("Zshrc snippet path should have a parent directory");
         if config_dir_parent.exists() {
             // Check if it's empty before trying to remove
-            if fs::read_dir(config_dir_parent).map_or(false, |mut dir| dir.next().is_none()) {
+            if fs::read_dir(config_dir_parent).is_ok_and(|mut dir| dir.next().is_none()) {
                 match fs::remove_dir(config_dir_parent) {
                     Ok(_) => println!("Removed empty directory: {:?}", config_dir_parent),
                     Err(_) => println!(

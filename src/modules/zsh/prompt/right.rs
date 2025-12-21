@@ -10,7 +10,7 @@ pub async fn right() {
         .prompt_contents_list
         .last()
         .cloned()
-        .unwrap_or_else(|| crate::zsh::theme::prompt_theme::PromptContents::default());
+        .unwrap_or_else(crate::zsh::theme::prompt_theme::PromptContents::default);
 
     let curved_lines = PromptCurveLine::from(prompt_contents.connection);
     let h = &curved_lines.horizontal;
