@@ -1,0 +1,65 @@
+name: release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - 'v*' # タグがプッシュされた時のみ実行するのが一般的です（任意で調整してください）
+  pull_request:
+
+env:
+  CRATE_NAME: gauth
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  RUST_BACKTRACE: 1
+
+jobs:
+  release:
+    name: Release - ${{ matrix.platform.os-name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os-name: Linux-x86_64
+            runs-on: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - os-name: Linux-aarch64
+            runs-on: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+          - os-name: Windows-x86_64
+            runs-on: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os-name: macOS-x86_64
+            runs-on: macos-latest
+            target: x86_64-apple-darwin
+          - os-name: macOS-aarch64
+            runs-on: macos-latest
+            target: aarch64-apple-darwin
+
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: ${{ matrix.platform.target }}
+          args: "--locked --release"
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+
+      - name: Release to GitHub
+        uses: houseabsolute/actions-rust-release@v0
+        with:
+          executable-name: ${{ env.CRATE_NAME }}
+          target: ${{ matrix.platform.target }}
+          extra-files: README.md
+          # テスト用の強制フラグは本番運用では false にするか削除を推奨
+          _force-release-for-testing: true 
+          action-gh-release-parameters: |
+            {
+                "repository": "${{ github.repository }}",
+                "token": "${{ env.GITHUB_TOKEN }}"
+            }
