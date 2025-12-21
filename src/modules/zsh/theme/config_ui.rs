@@ -5,30 +5,50 @@ use zsh_seq::NamedColor;
 
 use super::gradient::create_default_rainbow_gradient;
 use super::named_color_serde;
-use super::prompt_theme::{PromptContents, PromptSegmentSeparators}; // PromptSegmentSeparatorsをインポート
+use super::prompt_theme::{PromptContents, PromptContent, PromptSegmentSeparators}; // PromptSegmentSeparatorsとPromptContentをインポート
 use crate::zsh::prompt::{PromptConnection, PromptSeparation}; // crateルートからのパス
 
 // DisplayNamedColor
-struct DisplayNamedColor<'a>(&'a NamedColor);
+struct DisplayNamedColor<'a>(Option<&'a NamedColor>); // Option<&'a NamedColor>を受け取るように変更
 impl<'a> fmt::Display for DisplayNamedColor<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // named_color_serde内のデシリアライザが期待する形式に合わせる
-        let s = match self.0 {
-            NamedColor::Code256(c) => format!("Code256({})", c),
-            NamedColor::FullColor((r, g, b)) => format!("#{:02X}{:02X}{:02X}", r, g, b),
-            _ => format!("{:?}", self.0),
-        };
-        write!(f, "{}", s)
+        if let Some(color) = self.0 {
+            // named_color_serde内のデシリアライザが期待する形式に合わせる
+            let s = match color {
+                NamedColor::Code256(c) => format!("Code256({})", c),
+                NamedColor::FullColor((r, g, b)) => format!("#{:02X}{:02X}{:02X}", r, g, b),
+                _ => format!("{:?}", color),
+            };
+            write!(f, "{}", s)
+        } else {
+            write!(f, "None") // Noneの場合は"None"と表示
+        }
     }
 }
 
-pub fn prompt_for_named_color(prompt_text: &str, default_color: &NamedColor) -> NamedColor {
-    Input::with_theme(&ColorfulTheme::default())
+pub fn prompt_for_named_color(
+    prompt_text: &str,
+    default_color: Option<&NamedColor>,
+) -> Option<NamedColor> {
+    let default_str = DisplayNamedColor(default_color).to_string();
+    let input = Input::with_theme(&ColorfulTheme::default())
         .with_prompt(prompt_text)
-        .default(DisplayNamedColor(default_color).to_string())
+        .default(default_str.clone())
         .interact_text()
-        .map(|s| named_color_serde::deserialize_from_str(&s).unwrap_or(*default_color))
-        .unwrap_or_else(|_| *default_color)
+        .unwrap();
+
+    if input.eq_ignore_ascii_case("None") || input.is_empty() {
+        return None;
+    }
+
+    if let Ok(color) = named_color_serde::deserialize_from_str(&input) {
+        Some(color)
+    } else {
+        println!(
+            "Invalid color format. Keeping default or setting to None if default was None."
+        );
+        default_color.cloned() // 不正な入力の場合はデフォルト値を返す
+    }
 }
 
 // 新しい関数: フルカラーのRGB値をプロンプトで取得
@@ -60,13 +80,17 @@ pub fn configure_colors(prompt_contents: &mut PromptContents) {
     println!("\n--- Configure Colors ---");
 
     prompt_contents.color.bg =
-        prompt_for_named_color("Background color", &prompt_contents.color.bg);
+        prompt_for_named_color("Background color", Some(&prompt_contents.color.bg))
+            .unwrap_or(NamedColor::Black);
     prompt_contents.color.fg =
-        prompt_for_named_color("Foreground color", &prompt_contents.color.fg);
+        prompt_for_named_color("Foreground color", Some(&prompt_contents.color.fg))
+            .unwrap_or(NamedColor::White);
     prompt_contents.color.pc =
-        prompt_for_named_color("Primary color (pc)", &prompt_contents.color.pc);
+        prompt_for_named_color("Primary color (pc)", Some(&prompt_contents.color.pc))
+            .unwrap_or(NamedColor::Cyan);
     prompt_contents.color.sc =
-        prompt_for_named_color("Secondary color (sc)", &prompt_contents.color.sc);
+        prompt_for_named_color("Secondary color (sc)", Some(&prompt_contents.color.sc))
+            .unwrap_or(NamedColor::LightBlack);
 
     let options = [
         "Single Color",
@@ -88,15 +112,16 @@ pub fn configure_colors(prompt_contents: &mut PromptContents) {
         .unwrap();
 
     prompt_contents.color.accent = match selection {
-        0 => super::color_scheme::AccentColor::Single(prompt_for_named_color(
-            "Color",
-            &NamedColor::LightBlack,
-        )),
+        0 => super::color_scheme::AccentColor::Single(
+            prompt_for_named_color("Color", Some(&NamedColor::LightBlack))
+                .unwrap_or(NamedColor::LightBlack),
+        ),
         1 => {
             let color = prompt_for_named_color(
                 "Rainbow Start Color (Hex)",
-                &NamedColor::FullColor((255, 0, 0)),
-            );
+                Some(&NamedColor::FullColor((255, 0, 0))),
+            )
+            .unwrap_or(NamedColor::FullColor((255, 0, 0)));
             super::color_scheme::AccentColor::Rainbow(color)
         }
         2 => {
@@ -111,6 +136,16 @@ pub fn configure_colors(prompt_contents: &mut PromptContents) {
         }
         _ => unreachable!(),
     };
+}
+
+// 新しく追加する関数
+pub fn configure_prompt_content_colors(prompt_content: &mut PromptContent) {
+    println!("\n--- Configure Prompt Content Colors ---");
+
+    prompt_content.fg_color =
+        prompt_for_named_color("Foreground color (enter 'None' to clear)", prompt_content.fg_color.as_ref());
+    prompt_content.bg_color =
+        prompt_for_named_color("Background color (enter 'None' to clear)", prompt_content.bg_color.as_ref());
 }
 
 pub fn configure_connection(prompt_contents: &mut PromptContents) {

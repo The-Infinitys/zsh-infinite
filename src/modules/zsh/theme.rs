@@ -1,4 +1,5 @@
 pub mod named_color_serde; // 既存のファイルをそのまま使用
+pub mod named_color_serde_option; // 新しく追加
 
 pub mod color_scheme;
 pub mod config_ui;
@@ -8,7 +9,7 @@ pub mod prompt_theme;
 use dialoguer::Select;
 use dialoguer::theme::ColorfulTheme;
 
-use crate::zsh::theme::prompt_theme::PromptContents;
+use crate::zsh::theme::prompt_theme::{PromptContent, PromptContents};
 use crate::zsh::theme_manager;
 
 pub async fn main() {
@@ -76,6 +77,8 @@ async fn configure_prompt_line(prompt_contents: &mut PromptContents) {
             "Configure Colors",
             "Configure Connection",
             "Configure Separators",
+            "Configure Left Prompt Content", // 新しいオプション
+            "Configure Right Prompt Content", // 新しいオプション
             "Back to Main Menu",
         ];
         let selection = Select::with_theme(&ColorfulTheme::default())
@@ -88,8 +91,38 @@ async fn configure_prompt_line(prompt_contents: &mut PromptContents) {
             0 => config_ui::configure_colors(prompt_contents),
             1 => config_ui::configure_connection(prompt_contents),
             2 => config_ui::configure_separation(prompt_contents),
-            3 => break,
+            3 => configure_prompt_content_list(&mut prompt_contents.left, "Left"),
+            4 => configure_prompt_content_list(&mut prompt_contents.right, "Right"),
+            5 => break,
             _ => unreachable!(),
+        }
+    }
+}
+
+fn configure_prompt_content_list(contents: &mut Vec<PromptContent>, side: &str) {
+    loop {
+        println!("\n--- Configure {} Prompt Contents ---", side);
+        let mut options: Vec<String> = contents
+            .iter()
+            .enumerate()
+            .map(|(i, pc)| format!("{}: {}", i, pc.cmd))
+            .collect();
+        options.push("Back to Prompt Line Menu".to_string());
+
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Select content to configure")
+            .items(&options)
+            .interact()
+            .unwrap();
+
+        if selection == options.len() - 1 {
+            break; // Back to Prompt Line Menu
+        } else {
+            if let Some(prompt_content) = contents.get_mut(selection) {
+                config_ui::configure_prompt_content_colors(prompt_content);
+            } else {
+                eprintln!("Invalid selection.");
+            }
         }
     }
 }

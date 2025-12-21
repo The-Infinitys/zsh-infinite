@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::process::Command;
+use zsh_seq::{NamedColor, ZshPromptBuilder};
 
 use super::color_scheme::PromptColorScheme;
+ // 変更
 use crate::zsh::prompt::{PromptConnection, PromptSeparation};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, Copy)]
@@ -71,11 +73,15 @@ impl Default for PromptContents {
                     "zsh".to_string(),
                     vec!["-c".to_string(), "whoami".to_string()],
                     vec![],
+                    None,
+                    None,
                 ),
                 PromptContent::new(
                     "zsh".to_string(),
                     vec!["-c".to_string(), "hostname".to_string()],
                     vec![],
+                    None,
+                    None,
                 ),
             ],
             right: vec![
@@ -83,12 +89,16 @@ impl Default for PromptContents {
                     "zsh".to_string(),
                     vec!["-c".to_string(), "echo ${PWD/#$HOME/\\~}".to_string()],
                     vec![],
+                    None,
+                    None,
                 ),
                 // 終了コードの例（呼び出し側で調整される前提）
                 PromptContent::new(
                     "zsh".to_string(),
                     vec!["-c".to_string(), "echo $LAST_STATUS".to_string()],
                     vec![],
+                    None,
+                    None,
                 ),
             ],
             color: super::color_scheme::PromptColorScheme::default(),
@@ -107,11 +117,27 @@ pub struct PromptContent {
     pub cmd: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<String>,
+    #[serde(with = "super::named_color_serde_option", default, skip_serializing_if = "Option::is_none")]
+    pub fg_color: Option<NamedColor>,
+    #[serde(with = "super::named_color_serde_option", default, skip_serializing_if = "Option::is_none")]
+    pub bg_color: Option<NamedColor>,
 }
 
 impl PromptContent {
-    pub fn new(cmd: String, args: Vec<String>, envs: Vec<HashMap<String, String>>) -> Self {
-        Self { envs, cmd, args }
+    pub fn new(
+        cmd: String,
+        args: Vec<String>,
+        envs: Vec<HashMap<String, String>>,
+        fg_color: Option<NamedColor>,
+        bg_color: Option<NamedColor>,
+    ) -> Self {
+        Self {
+            envs,
+            cmd,
+            args,
+            fg_color,
+            bg_color,
+        }
     }
 
     pub async fn content(&self) -> Option<String> {
@@ -141,7 +167,15 @@ impl PromptContent {
             if stdout.is_empty() {
                 None
             } else {
-                Some(stdout)
+                let mut builder = ZshPromptBuilder::new();
+                if let Some(fg) = self.fg_color {
+                    builder = builder.color(fg);
+                }
+                if let Some(bg) = self.bg_color {
+                    builder = builder.color_bg(bg);
+                }
+                builder = builder.str(&stdout).end_color().end_color_bg();
+                Some(builder.build())
             }
         } else {
             // コマンド実行に失敗した場合の処理。
