@@ -1,5 +1,8 @@
 # Infinite Zsh Theme
 
+![basic](examples/basic/image.png)
+![infinite](examples/infinite/image.png)
+
 A highly customizable and dynamic Zsh theme written in Rust. Infinite offers a powerful CLI tool to manage your Zsh prompt's appearance, allowing for dynamic content, sophisticated coloring, and unique visual separators.
 
 ## Features
