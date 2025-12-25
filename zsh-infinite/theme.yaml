@@ -17,7 +17,22 @@ prompt_contents_list:
             "${LAST_COMMAND_EXECUTED}",
           ]
       - cmd: zsh-infinite
-        args: ["zsh", "build-in", "git"]
+        args:
+          [
+            "zsh",
+            "build-in",
+            "git",
+            "--git-icon-color", "White",
+            "--branch-color", "White",
+            "--staged-color", "#00FFFF",
+            "--unstaged-color", "Red",
+            "--untracked-color", "#FF007F",
+            "--conflict-color", "Magenta",
+            "--stashed-color", "Black",
+            "--clean-color", "White",
+            "--ahead-color", "White",
+            "--behind-color", "Red",
+          ]
       - cmd: zsh-infinite
         args: ["zsh", "build-in", "time"]
     color:
