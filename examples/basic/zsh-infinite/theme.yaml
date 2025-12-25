@@ -1,0 +1,47 @@
+prompt_contents_list:
+- left:
+  - cmd: zsh
+    args:
+    - -c
+    - whoami
+  - cmd: zsh
+    args:
+    - -c
+    - hostname
+  right:
+  - cmd: zsh
+    args:
+    - -c
+    - echo ${PWD/#$HOME/\~}
+  - cmd: zsh
+    args:
+    - -c
+    - echo $LAST_STATUS
+  color:
+    bg: Black
+    fg: White
+    pc: Cyan
+    sc: LightBlack
+    accent: !single LightBlack
+    accent_which: ForeGround
+  connection: None
+  left_segment_separators:
+    start_separator: Sharp
+    mid_separator: Sharp
+    end_separator: Sharp
+    edge_cap: true
+    bold_separation: true
+  right_segment_separators:
+    start_separator: Sharp
+    mid_separator: Sharp
+    end_separator: Sharp
+    edge_cap: true
+    bold_separation: true
+  accent_which: ForeGround
+transient_color:
+  bg: Black
+  fg: White
+  pc: Cyan
+  sc: LightBlack
+  accent: !single LightBlack
+  accent_which: ForeGround
