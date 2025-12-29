@@ -101,15 +101,30 @@ async fn configure_prompt_line(prompt_contents: &mut PromptContents) {
 fn configure_prompt_content_list(contents: &mut [PromptContent], side: &str) {
     loop {
         println!("\n--- Configure {} Prompt Contents ---", side);
+
+        // ラベルの動的生成
         let mut options: Vec<String> = contents
             .iter()
             .enumerate()
-            .map(|(i, pc)| format!("{}: {}", i, pc.cmd))
+            .map(|(i, pc)| {
+                let label = if let Some(cmd) = &pc.cmd {
+                    format!("External: {}", cmd)
+                } else if let Some(build_in) = &pc.build_in {
+                    // Commands enumのバリアント名を表示（Debugトレイトが必要）
+                    format!("Built-in: {:?}", build_in)
+                } else if let Some(literal) = &pc.literal {
+                    format!("Literal: {}", literal)
+                } else {
+                    "Empty Content".to_string()
+                };
+                format!("{}: {}", i, label)
+            })
             .collect();
+
         options.push("Back to Prompt Line Menu".to_string());
 
         let selection = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select content to configure")
+            .with_prompt(format!("Select {} content to configure", side))
             .items(&options)
             .interact()
             .unwrap();
@@ -117,6 +132,8 @@ fn configure_prompt_content_list(contents: &mut [PromptContent], side: &str) {
         if selection == options.len() - 1 {
             break; // Back to Prompt Line Menu
         } else if let Some(prompt_content) = contents.get_mut(selection) {
+            // ここでコンテンツごとの詳細編集（cmdの書き換えやbuild_inの切り替えなど）
+            // を行うサブメニューを呼び出すことも検討してください。
             config_ui::configure_prompt_content_colors(prompt_content);
         } else {
             eprintln!("Invalid selection.");

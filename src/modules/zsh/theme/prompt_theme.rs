@@ -121,7 +121,8 @@ pub struct PromptContent {
     pub build_in: Option<zsh_prompts::Commands>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub envs: Vec<HashMap<String, String>>,
-    pub cmd: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cmd: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<String>,
     #[serde(
@@ -150,7 +151,7 @@ impl PromptContent {
             literal: None,
             build_in: None,
             envs,
-            cmd,
+            cmd: Some(cmd),
             args,
             fg_color,
             bg_color,
@@ -161,7 +162,7 @@ impl PromptContent {
             literal: None,
             build_in: Some(build_in),
             envs: vec![],
-            cmd: "".to_string(),
+            cmd: None,
             args: vec![],
             fg_color: None,
             bg_color: None,
@@ -176,7 +177,7 @@ impl PromptContent {
             literal: Some(literal),
             build_in: None,
             envs: vec![],
-            cmd: "".to_string(),
+            cmd: None,
             args: vec![],
             fg_color,
             bg_color,
@@ -199,11 +200,11 @@ impl PromptContent {
             return Some(builder.build());
         }
 
-        if self.cmd.is_empty() {
+        if self.cmd.is_none() {
             return None;
         }
-
-        let mut command = Command::new(&self.cmd);
+        let cmd = self.cmd.as_ref().unwrap();
+        let mut command = Command::new(cmd);
 
         // --- 修正箇所: 引数の環境変数を展開 ---
         let expanded_args: Vec<String> = self
