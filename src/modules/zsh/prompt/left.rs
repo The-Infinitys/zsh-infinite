@@ -53,7 +53,11 @@ pub async fn left() {
             .collect();
         let (left_results, right_results) =
             tokio::join!(join_all(left_futures), join_all(right_futures));
-
+        let left_results = left_results.into_iter().filter(|r| !r.is_empty()).collect();
+        let right_results = right_results
+            .into_iter()
+            .filter(|r| !r.is_empty())
+            .collect();
         prompt.extend_left(left_results);
         prompt.extend_right(right_results);
 
@@ -102,7 +106,7 @@ pub async fn left() {
                 &curved_lines.cross_right
             })
             .end_color();
-
+        eprintln!("{}", final_prompt.build());
         println!("{}", final_prompt.build());
     }
     let (sc, connection) = match theme.prompt_contents_list.last() {

@@ -15,7 +15,7 @@ pub async fn start() {
         .chown_pid_file(true)
         .working_directory(env::current_dir().unwrap())
         .umask(0o077); // 本人以外読み書き不可
-
+    println!("Daemon started.");
     match daemonize.start() {
         Ok(_) => {
             server::server(paths.socket).await;

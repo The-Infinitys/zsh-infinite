@@ -256,12 +256,7 @@ impl PromptContent {
             // 3. Build-in の処理 (現在のプロセスで直接実行)
             Self::BuildIn { command } => {
                 let segments = command.exec();
-
-                let result = Self::convert_segments_to_sequences(segments);
-                if result.is_empty() {
-                    panic!("Unknown");
-                }
-                result
+                Self::convert_segments_to_sequences(segments)
             }
 
             // 4. Shell の処理

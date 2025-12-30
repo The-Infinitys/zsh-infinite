@@ -25,6 +25,8 @@ pub fn dev() {
 
     // YAMLにシリアライズ
     let theme_content = serde_yaml::to_string(&theme).expect("Failed to serialize theme");
+
+    // --- 3. テーマファイル
     let theme_path = config_dir.join("theme.yaml");
 
     // 必要であればプレースホルダ置換（今回は直接生成しているので基本不要ですが、パス解決用など）
@@ -37,7 +39,8 @@ pub fn dev() {
     let zshrc_content = zshrc_template.replace("{{RUN_DIR}}", &run_dir.to_string_lossy());
     fs::write(&zshrc_path, zshrc_content).expect("Failed to write .zshrc");
 
-    let zsh_theme = include_str!("../../assets/scripts/infinite.zsh-theme");
+    let zsh_theme = include_str!("../../assets/scripts/dev.zsh-theme");
+    let zsh_theme = zsh_theme.replace("{{RUN_DIR}}", &run_dir.to_string_lossy());
     let zsh_theme_path = run_dir.join(".zsh-theme");
     fs::write(&zsh_theme_path, zsh_theme).expect("Failed to write infinite.zsh-theme");
 
