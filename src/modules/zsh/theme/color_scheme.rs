@@ -18,7 +18,18 @@ pub struct PromptColorScheme {
     pub accent: AccentColor,
     pub accent_which: AccentWhich,
 }
-
+impl PromptColorScheme {
+    pub fn transient() -> Self {
+        Self {
+            bg: NamedColor::Black,
+            fg: NamedColor::White,
+            pc: NamedColor::Green,
+            sc: NamedColor::Red,
+            accent: AccentColor::Single(NamedColor::Black),
+            accent_which: AccentWhich::default(),
+        }
+    }
+}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum AccentColor {

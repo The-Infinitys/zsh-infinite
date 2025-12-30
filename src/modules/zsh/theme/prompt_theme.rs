@@ -29,7 +29,7 @@ impl Default for PromptTheme {
     fn default() -> Self {
         Self {
             prompt_contents_list: vec![PromptContents::default()],
-            transient_color: PromptColorScheme::default(),
+            transient_color: PromptColorScheme::transient(),
         }
     }
 }
@@ -37,7 +37,7 @@ impl PromptTheme {
     pub fn infinite() -> Self {
         Self {
             prompt_contents_list: vec![PromptContents::infinite()],
-            transient_color: PromptColorScheme::default(),
+            transient_color: PromptColorScheme::transient(),
         }
     }
 }
