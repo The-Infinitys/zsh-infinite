@@ -13,7 +13,7 @@ pub async fn right() -> ZshPromptBuilder {
     };
     let curved_lines = PromptCurveLine::from(connection);
     let h = &curved_lines.horizontal;
-    
+
     ZshPromptBuilder::new()
         .color(sc)
         .str(h)

@@ -2257,6 +2257,7 @@ dependencies = [
  "regex",
  "rkyv",
  "serde",
+ "zsh-sys",
 ]
 
 [[package]]
