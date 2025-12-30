@@ -19,12 +19,9 @@ function _update_infinite_prompt() {
 function _infinite_transient_prompt() {
     local last_status=$?
     export LAST_COMMAND_EXECUTED=$EPOCHREALTIME
-    PROMPT=''
-    zle reset-prompt
-    zsh-infinite zsh prompt hook 2> /dev/null
-    PROMPT='$(LAST_STATUS='${last_status}' {{RUN_DIR}}/zsh-infinite zsh prompt transient 2>/dev/null)'
+    PROMPT='$(LAST_STATUS='${last_status}' /home/the-infinitys/.local/bin/zsh-infinite zsh prompt transient 2>/dev/null)'
     RPROMPT=''
-    zle reset-prompt
+    zle reset-prompt    
 }
 
 # カーソル形状をデフォルト（ブロック等）に戻す
