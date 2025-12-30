@@ -14,7 +14,7 @@ pub async fn main(command: ZshCommands) {
             PromptType::Transient { exit_code } => prompt::transient(exit_code).await,
         },
         ZshCommands::BuildIn { segment } => {
-            prompt::segment(segment);
+            prompt::segment(*segment);
         }
         ZshCommands::Daemon { command } => {
             daemon::main(command).await;

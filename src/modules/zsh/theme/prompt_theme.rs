@@ -287,26 +287,27 @@ impl PromptContent {
                 }
 
                 if let Ok(output) = command.output().await
-                    && output.status.success() {
-                        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                        if !stdout.is_empty() {
-                            let mut seqs = Vec::new();
-                            if let Some(c) = bg {
-                                seqs.push(ZshSequence::BackgroundColor(*c));
-                            }
-                            if let Some(c) = fg {
-                                seqs.push(ZshSequence::ForegroundColor(*c));
-                            }
-                            seqs.push(ZshSequence::Literal(stdout));
-                            if fg.is_some() {
-                                seqs.push(ZshSequence::ForegroundColorEnd);
-                            }
-                            if bg.is_some() {
-                                seqs.push(ZshSequence::BackgroundColorEnd);
-                            }
-                            return seqs;
+                    && output.status.success()
+                {
+                    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    if !stdout.is_empty() {
+                        let mut seqs = Vec::new();
+                        if let Some(c) = bg {
+                            seqs.push(ZshSequence::BackgroundColor(*c));
                         }
+                        if let Some(c) = fg {
+                            seqs.push(ZshSequence::ForegroundColor(*c));
+                        }
+                        seqs.push(ZshSequence::Literal(stdout));
+                        if fg.is_some() {
+                            seqs.push(ZshSequence::ForegroundColorEnd);
+                        }
+                        if bg.is_some() {
+                            seqs.push(ZshSequence::BackgroundColorEnd);
+                        }
+                        return seqs;
                     }
+                }
                 Vec::new()
             }
         }
