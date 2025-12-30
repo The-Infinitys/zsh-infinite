@@ -249,7 +249,7 @@ impl PromptContent {
 
             // 2. Daemon の処理 (先ほど作成した get 関数を呼び出し)
             Self::Daemon { command } => {
-                let segments = daemon::get(&command).await;
+                let segments = daemon::get(command).await;
                 Self::convert_segments_to_sequences(segments)
             }
 
@@ -286,8 +286,8 @@ impl PromptContent {
                     command.env(key, value);
                 }
 
-                if let Ok(output) = command.output().await {
-                    if output.status.success() {
+                if let Ok(output) = command.output().await
+                    && output.status.success() {
                         let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
                         if !stdout.is_empty() {
                             let mut seqs = Vec::new();
@@ -307,7 +307,6 @@ impl PromptContent {
                             return seqs;
                         }
                     }
-                }
                 Vec::new()
             }
         }

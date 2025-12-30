@@ -4,8 +4,8 @@ use std::fs;
 pub async fn stop() {
     let paths = get_daemon_paths();
 
-    if let Ok(pid_str) = fs::read_to_string(&paths.pid) {
-        if let Ok(pid) = pid_str.trim().parse::<i32>() {
+    if let Ok(pid_str) = fs::read_to_string(&paths.pid)
+        && let Ok(pid) = pid_str.trim().parse::<i32>() {
             println!("Stopping daemon with PID: {}", pid);
 
             let result = unsafe { libc::kill(pid, 15) };
@@ -21,6 +21,5 @@ pub async fn stop() {
             let _ = fs::remove_file(&paths.socket);
             return;
         }
-    }
     println!("No running daemon found (PID file missing).");
 }
