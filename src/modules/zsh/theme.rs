@@ -102,20 +102,24 @@ fn configure_prompt_content_list(contents: &mut [PromptContent], side: &str) {
     loop {
         println!("\n--- Configure {} Prompt Contents ---", side);
 
-        // ラベルの動的生成
+        // 列挙型のバリアントに基づいたラベルの動的生成
         let mut options: Vec<String> = contents
             .iter()
             .enumerate()
             .map(|(i, pc)| {
-                let label = if let Some(cmd) = &pc.cmd {
-                    format!("External: {}", cmd)
-                } else if let Some(build_in) = &pc.build_in {
-                    // Commands enumのバリアント名を表示（Debugトレイトが必要）
-                    format!("Built-in: {:?}", build_in)
-                } else if let Some(literal) = &pc.literal {
-                    format!("Literal: {}", literal)
-                } else {
-                    "Empty Content".to_string()
+                let label = match pc {
+                    PromptContent::Literal { value, .. } => {
+                        format!("Literal: \"{}\"", value)
+                    }
+                    PromptContent::Daemon { command } => {
+                        format!("Daemon: {:?}", command)
+                    }
+                    PromptContent::BuildIn { command } => {
+                        format!("Built-in: {:?}", command)
+                    }
+                    PromptContent::Shell { cmd, .. } => {
+                        format!("External Shell: {}", cmd)
+                    }
                 };
                 format!("{}: {}", i, label)
             })
@@ -131,10 +135,15 @@ fn configure_prompt_content_list(contents: &mut [PromptContent], side: &str) {
 
         if selection == options.len() - 1 {
             break; // Back to Prompt Line Menu
-        } else if let Some(prompt_content) = contents.get_mut(selection) {
-            // ここでコンテンツごとの詳細編集（cmdの書き換えやbuild_inの切り替えなど）
-            // を行うサブメニューを呼び出すことも検討してください。
+        }
+
+        // 選択されたコンテンツの編集
+        if let Some(prompt_content) = contents.get_mut(selection) {
+            // 色の設定メニュー（既存のUI関数を呼び出し）
             config_ui::configure_prompt_content_colors(prompt_content);
+
+            // ヒント: ここで内容（コマンドや文字列）そのものを変更するサブメニューを
+            // さらに追加することも可能です。
         } else {
             eprintln!("Invalid selection.");
         }

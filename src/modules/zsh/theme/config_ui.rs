@@ -136,18 +136,25 @@ pub fn configure_colors(prompt_contents: &mut PromptContents) {
     };
 }
 
-// 新しく追加する関数
 pub fn configure_prompt_content_colors(prompt_content: &mut PromptContent) {
     println!("\n--- Configure Prompt Content Colors ---");
 
-    prompt_content.fg_color = prompt_for_named_color(
-        "Foreground color (enter 'None' to clear)",
-        prompt_content.fg_color.as_ref(),
-    );
-    prompt_content.bg_color = prompt_for_named_color(
-        "Background color (enter 'None' to clear)",
-        prompt_content.bg_color.as_ref(),
-    );
+    match prompt_content {
+        PromptContent::Literal { fg, bg, .. } | PromptContent::Shell { fg, bg, .. } => {
+            // Foreground の設定
+            *fg = prompt_for_named_color("Foreground color (enter 'None' to clear)", fg.as_ref());
+
+            // Background の設定
+            *bg = prompt_for_named_color("Background color (enter 'None' to clear)", bg.as_ref());
+        }
+        PromptContent::Daemon { .. } | PromptContent::BuildIn { .. } => {
+            println!("Note: Colors for Daemon/BuildIn are managed by their respective commands.");
+            println!("(They use the segment's internal color settings.)");
+
+            // 必要であれば、ここで「強制的に上書きする色」を設定するロジックを
+            // 構造体側に追加することも検討してください。
+        }
+    }
 }
 
 pub fn configure_connection(prompt_contents: &mut PromptContents) {

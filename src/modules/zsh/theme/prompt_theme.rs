@@ -6,6 +6,7 @@ use zsh_seq::{NamedColor, ZshSequence};
 use super::color_scheme::PromptColorScheme;
 // 変更
 use crate::zsh::{
+    daemon,
     prompt::{PromptConnection, PromptSeparation},
     theme::color_named_color::ToNamedColor,
 };
@@ -28,6 +29,14 @@ impl Default for PromptTheme {
     fn default() -> Self {
         Self {
             prompt_contents_list: vec![PromptContents::default()],
+            transient_color: PromptColorScheme::default(),
+        }
+    }
+}
+impl PromptTheme {
+    pub fn infinite() -> Self {
+        Self {
+            prompt_contents_list: vec![PromptContents::infinite()],
             transient_color: PromptColorScheme::default(),
         }
     }
@@ -72,37 +81,36 @@ impl Default for PromptContents {
     fn default() -> Self {
         Self {
             left: vec![
-                PromptContent::shell(
-                    "zsh".to_string(),
-                    vec!["-c".to_string(), "whoami".to_string()],
-                    vec![],
-                    None,
-                    None,
-                ),
-                PromptContent::shell(
-                    "zsh".to_string(),
-                    vec!["-c".to_string(), "hostname".to_string()],
-                    vec![],
-                    None,
-                    None,
-                ),
+                // 以前の whoami を Shell で実装
+                PromptContent::Shell {
+                    cmd: "whoami".to_string(),
+                    args: vec![],
+                    envs: HashMap::new(),
+                    fg: None,
+                    bg: None,
+                },
+                // hostname を Shell で実装
+                PromptContent::Shell {
+                    cmd: "hostname".to_string(),
+                    args: vec![],
+                    envs: HashMap::new(),
+                    fg: None,
+                    bg: None,
+                },
             ],
             right: vec![
-                PromptContent::shell(
-                    "zsh".to_string(),
-                    vec!["-c".to_string(), "echo ${PWD/#$HOME/\\~}".to_string()],
-                    vec![],
-                    None,
-                    None,
-                ),
-                // 終了コードの例（呼び出し側で調整される前提）
-                PromptContent::shell(
-                    "zsh".to_string(),
-                    vec!["-c".to_string(), "echo $LAST_STATUS".to_string()],
-                    vec![],
-                    None,
-                    None,
-                ),
+                // ディレクトリ表示 (PWD) は BuildIn もしくは Daemon の Pwd コマンドを利用
+                PromptContent::BuildIn {
+                    command: zsh_prompts::Commands::Pwd { color: None },
+                },
+                // 終了コードの表示。Cmd コマンドを利用（環境変数は呼び出し側で解決）
+                PromptContent::BuildIn {
+                    command: zsh_prompts::Commands::Cmd {
+                        last_status: "$LAST_STATUS".to_string(),
+                        last_command_executed: None,
+                        color: None,
+                    },
+                },
             ],
             color: super::color_scheme::PromptColorScheme::default(),
             connection: PromptConnection::default(),
@@ -112,171 +120,219 @@ impl Default for PromptContents {
         }
     }
 }
-
+impl PromptContents {
+    pub fn infinite() -> Self {
+        use zsh_prompts::Color;
+        Self {
+            left: vec![
+                PromptContent::BuildIn {
+                    command: zsh_prompts::Commands::Os {
+                        color: Some("white".to_string()),
+                    },
+                },
+                PromptContent::BuildIn {
+                    command: zsh_prompts::Commands::Pwd {
+                        color: Some("#00FFFF".to_string()),
+                    },
+                },
+            ],
+            right: vec![
+                PromptContent::BuildIn {
+                    command: zsh_prompts::Commands::Cmd {
+                        last_status: "$LAST_STATUS".to_string(),
+                        last_command_executed: Some("$LAST_COMMAND_EXECUTED".to_string()),
+                        color: None,
+                    },
+                },
+                PromptContent::Daemon {
+                    command: zsh_prompts::Commands::Git {
+                        path: None,
+                        options: zsh_prompts::git::GitStatusOptions {
+                            default_color_option: None,
+                            git_icon_color_option: Some(Color::Blue),
+                            branch_color_option: Some(Color::White),
+                            staged_color_option: Some(Color::Cyan),
+                            unstaged_color_option: Some(Color::Red),
+                            untracked_color_option: Some(Color::Rgb(255, 0, 112)),
+                            conflict_color_option: Some(Color::Magenta),
+                            stashed_color_option: Some(Color::Black),
+                            clean_color_option: Some(Color::White),
+                            ahead_color_option: Some(Color::Green),
+                            behind_color_option: Some(Color::Red),
+                        },
+                    },
+                },
+                PromptContent::BuildIn {
+                    command: zsh_prompts::Commands::Time {
+                        color: Some("green".to_string()),
+                    },
+                },
+            ],
+            color: super::color_scheme::PromptColorScheme {
+                bg: NamedColor::FullColor((32, 32, 32)),
+                fg: NamedColor::White, // もしくは NamedColor::White
+                pc: NamedColor::Red,
+                sc: NamedColor::LightBlack,
+                accent: crate::zsh::theme::color_scheme::AccentColor::Rainbow(
+                    NamedColor::FullColor((0, 255, 255)),
+                ),
+                accent_which: AccentWhich::ForeGround,
+            },
+            connection: PromptConnection::Line,
+            left_segment_separators: PromptSegmentSeparators {
+                start_separator: PromptSeparation::Round,
+                mid_separator: PromptSeparation::Slash,
+                end_separator: PromptSeparation::Sharp,
+                edge_cap: true,
+                bold_separation: true,
+            },
+            right_segment_separators: PromptSegmentSeparators {
+                start_separator: PromptSeparation::Sharp,
+                mid_separator: PromptSeparation::BackSlash,
+                end_separator: PromptSeparation::Round,
+                edge_cap: true,
+                bold_separation: true,
+            },
+            accent_which: AccentWhich::ForeGround,
+        }
+    }
+}
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PromptContent {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub literal: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_in: Option<zsh_prompts::Commands>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub envs: Vec<HashMap<String, String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cmd: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub args: Vec<String>,
-    #[serde(
-        with = "super::named_color_serde_option",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub fg_color: Option<NamedColor>,
-    #[serde(
-        with = "super::named_color_serde_option",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub bg_color: Option<NamedColor>,
+pub enum PromptContent {
+    /// 固定文字列を表示
+    Literal {
+        value: String,
+        #[serde(with = "super::named_color_serde_option", default)]
+        fg: Option<NamedColor>,
+        #[serde(with = "super::named_color_serde_option", default)]
+        bg: Option<NamedColor>,
+    },
+    /// デーモンを介して高速に取得
+    Daemon { command: zsh_prompts::Commands },
+    /// プロセス内で直接実行（現在のバイナリ内で完結）
+    BuildIn { command: zsh_prompts::Commands },
+    /// 外部コマンドを実行
+    Shell {
+        cmd: String,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        args: Vec<String>,
+        #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+        envs: HashMap<String, String>,
+        #[serde(with = "super::named_color_serde_option", default)]
+        fg: Option<NamedColor>,
+        #[serde(with = "super::named_color_serde_option", default)]
+        bg: Option<NamedColor>,
+    },
 }
 
 impl PromptContent {
-    pub fn shell(
-        cmd: String,
-        args: Vec<String>,
-        envs: Vec<HashMap<String, String>>,
-        fg_color: Option<NamedColor>,
-        bg_color: Option<NamedColor>,
-    ) -> Self {
-        Self {
-            literal: None,
-            build_in: None,
-            envs,
-            cmd: Some(cmd),
-            args,
-            fg_color,
-            bg_color,
-        }
-    }
-    pub fn build_in(build_in: zsh_prompts::Commands) -> Self {
-        Self {
-            literal: None,
-            build_in: Some(build_in),
-            envs: vec![],
-            cmd: None,
-            args: vec![],
-            fg_color: None,
-            bg_color: None,
-        }
-    }
-    pub fn literal(
-        literal: String,
-        fg_color: Option<NamedColor>,
-        bg_color: Option<NamedColor>,
-    ) -> Self {
-        Self {
-            literal: Some(literal),
-            build_in: None,
-            envs: vec![],
-            cmd: None,
-            args: vec![],
-            fg_color,
-            bg_color,
-        }
-    }
     pub async fn content(&self) -> Vec<ZshSequence> {
-        // 1. Literal の処理
-        if let Some(literal) = &self.literal {
-            return vec![ZshSequence::Literal(literal.clone())];
-        }
-
-        // 2. Build-in コマンドの処理
-        // 2. Build-in コマンドの処理
-        if let Some(build_in) = &self.build_in {
-            let segments = build_in.exec();
-            let mut result = Vec::new();
-            let len = segments.len();
-
-            for (i, segment) in segments.into_iter().enumerate() {
-                // 1. 色の開始 (Foreground)
-                if let Some(fg) = segment.color {
-                    result.push(ZshSequence::ForegroundColor(fg.to_named_color()));
+        match self {
+            // 1. Literal の処理
+            Self::Literal { value, fg, bg } => {
+                let mut seqs = Vec::new();
+                if let Some(c) = bg {
+                    seqs.push(ZshSequence::BackgroundColor(*c));
                 }
-
-                // 2. コンテンツ本体
-                result.push(ZshSequence::Literal(segment.content));
-
-                // 3. 色の終了
-                if segment.color.is_some() {
-                    result.push(ZshSequence::ForegroundColorEnd);
+                if let Some(c) = fg {
+                    seqs.push(ZshSequence::ForegroundColor(*c));
                 }
-
-                // 4. セグメント間のスペース挿入
-                // 最後のセグメント以外、かつ現在のセグメントが空でない場合にスペースを入れる
-                if i < len - 1 {
-                    result.push(ZshSequence::Literal(" ".to_string()));
+                seqs.push(ZshSequence::Literal(value.clone()));
+                if fg.is_some() {
+                    seqs.push(ZshSequence::ForegroundColorEnd);
                 }
-            }
-            return result;
-        }
-
-        // 3. 外部コマンド (Shell) の処理
-        if let Some(cmd) = &self.cmd {
-            let mut command = Command::new(cmd);
-
-            let expanded_args: Vec<String> = self
-                .args
-                .iter()
-                .map(|arg| {
-                    shellexpand::env(arg)
-                        .unwrap_or(Cow::Borrowed(arg))
-                        .to_string()
-                })
-                .collect();
-
-            command.args(&expanded_args);
-
-            if let Ok(current_dir) = std::env::current_dir() {
-                command.current_dir(current_dir);
+                if bg.is_some() {
+                    seqs.push(ZshSequence::BackgroundColorEnd);
+                }
+                seqs
             }
 
-            for env_map in &self.envs {
-                for (key, value) in env_map {
+            // 2. Daemon の処理 (先ほど作成した get 関数を呼び出し)
+            Self::Daemon { command } => {
+                let segments = daemon::get(&command).await;
+                Self::convert_segments_to_sequences(segments)
+            }
+
+            // 3. Build-in の処理 (現在のプロセスで直接実行)
+            Self::BuildIn { command } => {
+                let segments = command.exec();
+                Self::convert_segments_to_sequences(segments)
+            }
+
+            // 4. Shell の処理
+            Self::Shell {
+                cmd,
+                args,
+                envs,
+                fg,
+                bg,
+            } => {
+                let mut command = Command::new(cmd);
+
+                let expanded_args: Vec<String> = args
+                    .iter()
+                    .map(|arg| {
+                        shellexpand::env(arg)
+                            .unwrap_or(Cow::Borrowed(arg))
+                            .to_string()
+                    })
+                    .collect();
+
+                command.args(&expanded_args);
+                if let Ok(current_dir) = std::env::current_dir() {
+                    command.current_dir(current_dir);
+                }
+                for (key, value) in envs {
                     command.env(key, value);
                 }
-            }
 
-            if let Ok(output) = command.output().await {
-                if output.status.success() {
-                    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                    if !stdout.is_empty() {
-                        let mut seqs = Vec::new();
-
-                        // 背景色
-                        if let Some(bg) = self.bg_color {
-                            seqs.push(ZshSequence::BackgroundColor(bg));
+                if let Ok(output) = command.output().await {
+                    if output.status.success() {
+                        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                        if !stdout.is_empty() {
+                            let mut seqs = Vec::new();
+                            if let Some(c) = bg {
+                                seqs.push(ZshSequence::BackgroundColor(*c));
+                            }
+                            if let Some(c) = fg {
+                                seqs.push(ZshSequence::ForegroundColor(*c));
+                            }
+                            seqs.push(ZshSequence::Literal(stdout));
+                            if fg.is_some() {
+                                seqs.push(ZshSequence::ForegroundColorEnd);
+                            }
+                            if bg.is_some() {
+                                seqs.push(ZshSequence::BackgroundColorEnd);
+                            }
+                            return seqs;
                         }
-                        // 前景色
-                        if let Some(fg) = self.fg_color {
-                            seqs.push(ZshSequence::ForegroundColor(fg));
-                        }
-
-                        seqs.push(ZshSequence::Literal(stdout));
-
-                        // 終了タグ (順番に注意)
-                        if self.fg_color.is_some() {
-                            seqs.push(ZshSequence::ForegroundColorEnd);
-                        }
-                        if self.bg_color.is_some() {
-                            seqs.push(ZshSequence::BackgroundColorEnd);
-                        }
-
-                        return seqs;
                     }
                 }
+                Vec::new()
             }
         }
+    }
 
-        // 失敗、または該当なしの場合は空配列を返す
-        Vec::new()
+    /// PromptSegment のリストを ZshSequence のリストに変換する補助関数
+    fn convert_segments_to_sequences(
+        segments: Vec<zsh_prompts::PromptSegment>,
+    ) -> Vec<ZshSequence> {
+        let mut result = Vec::new();
+        let len = segments.len();
+
+        for (i, segment) in segments.into_iter().enumerate() {
+            if let Some(fg) = segment.color {
+                result.push(ZshSequence::ForegroundColor(fg.to_named_color()));
+            }
+            result.push(ZshSequence::Literal(segment.content));
+            if segment.color.is_some() {
+                result.push(ZshSequence::ForegroundColorEnd);
+            }
+            // セグメント間のスペース
+            if i < len - 1 {
+                result.push(ZshSequence::Literal(" ".to_string()));
+            }
+        }
+        result
     }
 }

@@ -42,7 +42,6 @@ impl Prompt {
         if self.left.is_empty() {
             return ZshPromptBuilder::new();
         }
-
         let color_scheme = &prompt_contents.color;
         let seps = &prompt_contents.left_segment_separators;
         let bg_color = color_scheme.bg;
@@ -122,7 +121,6 @@ impl Prompt {
                 .str(&seps.end_separator.sep_box().left)
                 .end_color();
         }
-
         builder
     }
 
