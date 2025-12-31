@@ -28,9 +28,9 @@ impl ZshModule for ZshInfinite {
 
     fn boot(&mut self) -> ZshResult {
         // precmd だけでなく exit (シェル終了時) にも登録
-        Hook::add("precmd", my_precmd_logger)?;
+        Hook::add("preexec", my_precmd_logger)?;
         Hook::add("exit", my_precmd_logger)?;
-        eprintln!("[ZshInfinite] Hooks 'precmd' and 'exit' registered.");
+        eprintln!("[ZshInfinite] Hooks are registered.");
         Ok(())
     }
 
