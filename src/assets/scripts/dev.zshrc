@@ -30,9 +30,6 @@ else
     # module_path が設定されているので、ファイル名ではなくモジュール名でロード可能
     if zmodload libzsh_infinite; then
         echo "Successfully loaded zsh_infinite module."
-        # モジュール版は Rust 側で PROMPT 変数を直接管理するため、
-        # setopt PROMPT_SUBST のみ有効化する
-        setopt PROMPT_SUBST
     else
         echo "Error: Failed to load zsh_infinite module from module_path."
         # echo "Falling back to Binary mode..."
