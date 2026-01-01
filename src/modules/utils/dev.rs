@@ -39,7 +39,7 @@ pub fn dev() {
     let zshrc_content = zshrc_template.replace("{{RUN_DIR}}", &run_dir.to_string_lossy());
     fs::write(&zshrc_path, zshrc_content).expect("Failed to write .zshrc");
 
-    let zsh_theme = include_str!("../../assets/scripts/dev.zsh-theme");
+    let zsh_theme = include_str!("../../assets/scripts/infinite.zsh-theme");
     let zsh_theme = zsh_theme.replace("{{RUN_DIR}}", &run_dir.to_string_lossy());
     let zsh_theme_path = run_dir.join(".zsh-theme");
     fs::write(&zsh_theme_path, zsh_theme).expect("Failed to write infinite.zsh-theme");
