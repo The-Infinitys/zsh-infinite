@@ -6,7 +6,6 @@ use zsh_seq::{NamedColor, ZshSequence};
 use super::color_scheme::PromptColorScheme;
 // 変更
 use crate::zsh::{
-    daemon,
     prompt::{PromptConnection, PromptSeparation},
     theme::color_named_color::ToNamedColor,
 };
@@ -207,8 +206,6 @@ pub enum PromptContent {
         #[serde(with = "super::named_color_serde_option", default)]
         bg: Option<NamedColor>,
     },
-    /// デーモンを介して高速に取得
-    Daemon { command: zsh_prompts::Commands },
     /// プロセス内で直接実行（現在のバイナリ内で完結）
     BuildIn { command: zsh_prompts::Commands },
     /// 外部コマンドを実行
@@ -245,12 +242,6 @@ impl PromptContent {
                     seqs.push(ZshSequence::BackgroundColorEnd);
                 }
                 seqs
-            }
-
-            // 2. Daemon の処理 (先ほど作成した get 関数を呼び出し)
-            Self::Daemon { command } => {
-                let segments = daemon::get(command).await;
-                Self::convert_segments_to_sequences(segments)
             }
 
             // 3. Build-in の処理 (現在のプロセスで直接実行)

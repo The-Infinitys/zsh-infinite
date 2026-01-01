@@ -121,9 +121,6 @@ fn configure_prompt_content_list(contents: &mut [PromptContent], side: &str) {
                     PromptContent::Literal { value, .. } => {
                         format!("Literal: \"{}\"", value)
                     }
-                    PromptContent::Daemon { command } => {
-                        format!("Daemon: {:?}", command)
-                    }
                     PromptContent::BuildIn { command } => {
                         format!("Built-in: {:?}", command)
                     }

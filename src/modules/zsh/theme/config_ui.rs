@@ -147,10 +147,9 @@ pub fn configure_prompt_content_colors(prompt_content: &mut PromptContent) {
             // Background の設定
             *bg = prompt_for_named_color("Background color (enter 'None' to clear)", bg.as_ref());
         }
-        PromptContent::Daemon { .. } | PromptContent::BuildIn { .. } => {
+        PromptContent::BuildIn { .. } => {
             println!("Note: Colors for Daemon/BuildIn are managed by their respective commands.");
             println!("(They use the segment's internal color settings.)");
-
             // 必要であれば、ここで「強制的に上書きする色」を設定するロジックを
             // 構造体側に追加することも検討してください。
         }

@@ -5,21 +5,13 @@ use zsh_system::{Features, ZshModule, ZshParameter, ZshResult, export_module};
 mod args;
 use crate::{args::PromptType, zsh};
 use args::ZmodArgs;
+#[derive(Default)]
 struct ZshInfinite {
     rt: Option<Runtime>,
     old_prompt: String,
     old_rprompt: String,
 }
 
-impl Default for ZshInfinite {
-    fn default() -> Self {
-        Self {
-            rt: None,
-            old_prompt: String::new(),
-            old_rprompt: String::new(),
-        }
-    }
-}
 
 impl ZshInfinite {
     pub fn precmd(&mut self) -> ZshResult {
@@ -68,8 +60,8 @@ impl ZshModule for ZshInfinite {
 
     fn boot(&mut self) -> ZshResult {
         self.rt = Some(Runtime::new().unwrap());
-        self.old_prompt = ZshParameter::get_str("PROMPT").unwrap_or(String::new());
-        self.old_rprompt = ZshParameter::get_str("RPROMPT").unwrap_or(String::new());
+        self.old_prompt = ZshParameter::get_str("PROMPT").unwrap_or_default();
+        self.old_rprompt = ZshParameter::get_str("RPROMPT").unwrap_or_default();
         zsh_system::eval(include_str!("assets/scripts/zmod/boot.sh"));
         Ok(())
     }
