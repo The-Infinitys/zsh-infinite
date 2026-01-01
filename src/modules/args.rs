@@ -24,6 +24,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: ZshCommands,
     },
+    /// For Bash PS1
+    Bash {
+        #[command(subcommand)]
+        command: BashCommands,
+    },
     /// Update the application
     Update,
     /// Install a component
@@ -47,6 +52,8 @@ pub enum ThemeCommands {
     /// Theme for The Infinity's
     Infinite,
 }
+#[derive(Subcommand)]
+pub enum BashCommands {}
 
 #[derive(Subcommand)]
 pub enum ZshCommands {
