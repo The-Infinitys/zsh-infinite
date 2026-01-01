@@ -33,11 +33,6 @@ impl ZshInfinite {
         let rt = self.rt.as_ref().unwrap();
 
         let exit_code = ZshParameter::get_int("?") as i32;
-        ZshParameter::set_str("PROMPT", "")?;
-        ZshParameter::set_str("RPROMPT", "")?;
-        zsh_system::eval("zle reset-prompt");
-        // 3. Transient Prompt (確定後の表示) を構築
-        let hook_prompt = rt.block_on(async { zsh::build_prompt(&PromptType::Hook).await.build() });
         let transient_prompt = rt.block_on(async {
             zsh::build_prompt(&PromptType::Transient {
                 exit_code: Some(exit_code),
@@ -45,7 +40,6 @@ impl ZshInfinite {
             .await
             .build()
         });
-        print!("{}", hook_prompt);
         ZshParameter::set_str("PROMPT", &transient_prompt)?;
         ZshParameter::set_str("RPROMPT", "")?;
         zsh_system::eval("zle reset-prompt");
