@@ -42,7 +42,6 @@ impl ZshInfinite {
         });
         ZshParameter::set_str("PROMPT", &transient_prompt)?;
         ZshParameter::set_str("RPROMPT", "")?;
-        zsh_system::eval("zle reset-prompt");
         Ok(())
     }
 }
