@@ -42,8 +42,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: true
           fetch-depth: 0
+      - name: Clone zsh-seq
+        run: git clone https://github.com/The-Infinitys/rust.zsh-seq zsh-seq
+      - name: Clone zsh-prompts
+        run: git clone https://github.com/The-Infinitys/rust.zsh-prompts zsh-prompts
+      - name: Clone zsh-system
+        run: git clone https://github.com/The-Infinitys/rust.zsh-system zsh-system
       - name: Build
         uses: houseabsolute/actions-rust-cross@v1
         with:
