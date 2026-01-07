@@ -7,13 +7,12 @@ ZLE_RPROMPT_INDENT=0
 
 # --- プロンプト更新フック ---
 function _zsh_infinite_precmd() {
-    __zsh_infinite_internal precmd >/dev/null 2>&1
-
+    __zsh_infinite_internal precmd 2>/dev/null
 }
 
 # --- Transient Prompt ---
 function _zle_infinite_line_finish() {
-    __zsh_infinite_internal line-finish 2>/dev/null 
+    __zsh_infinite_internal line-finish 2>/dev/null
 }
 
 {
@@ -27,6 +26,5 @@ function _zle_infinite_line_finish() {
         old_func="${current_widget#user:}"
     fi
     __zsh_infinite_internal store zle-line-finish "${old_func:-${current_widget}}"
-    
     zle -N zle-line-finish _zle_infinite_line_finish
 } >/dev/null 2>&1

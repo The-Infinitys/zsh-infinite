@@ -1,15 +1,17 @@
+#[cfg(zsh_lib_found)]
 use super::paths;
-#[cfg(unix)]
+#[cfg(all(unix, zsh_lib_found))]
 use std::os::unix::fs::PermissionsExt;
+#[cfg(zsh_lib_found)]
 use std::{
     env::{self, home_dir},
     fs,
     path::PathBuf,
 };
 
-const LIB_DATA: &[u8] = include_bytes!(env!("ZSH_LIB_PATH"));
-
+#[cfg(zsh_lib_found)]
 pub fn install() {
+    const LIB_DATA: &[u8] = include_bytes!(env!("ZSH_LIB_PATH"));
     let install_paths = match paths::get_install_paths() {
         Ok(paths) => paths,
         Err(e) => {
@@ -300,4 +302,9 @@ fi
     println!(
         "\nInstallation complete! Please restart your Zsh session or run 'source ~/.zshrc' to apply the changes."
     );
+}
+
+#[cfg(not(zsh_lib_found))]
+pub fn install() {
+    // ライブラリビルド時には何もしない
 }

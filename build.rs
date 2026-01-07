@@ -3,6 +3,9 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
+    // `zsh_lib_found` cfg をcargoに通知して、`unexpected_cfgs`警告を抑制する
+    println!("cargo:rustc-check-cfg=cfg(zsh_lib_found)");
+
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let profile = env::var("PROFILE").unwrap(); // debug or release
 
@@ -22,9 +25,11 @@ fn main() {
         .join(&profile)
         .join(format!("{}{}.{}", prefix, lib_name, ext));
 
-    // バイナリコンパイル時に参照できるように環境変数をセット
-    println!("cargo:rustc-env=ZSH_LIB_PATH={}", lib_path.display());
-
-    // ライブラリが変更されたら再ビルドするように指示
-    println!("cargo:rerun-if-changed={}", lib_path.display());
+    // バイナリビルド時（＝ライブラリファイルが既に存在する場合）のみ、
+    // 環境変数をセットし、cfgフラグを有効にする
+    if lib_path.exists() {
+        println!("cargo:rustc-env=ZSH_LIB_PATH={}", lib_path.display());
+        println!("cargo:rerun-if-changed={}", lib_path.display());
+        println!("cargo:rustc-cfg=zsh_lib_found");
+    }
 }
