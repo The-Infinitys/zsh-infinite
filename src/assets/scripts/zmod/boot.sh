@@ -8,6 +8,7 @@ ZLE_RPROMPT_INDENT=0
 # --- プロンプト更新フック ---
 function _zsh_infinite_precmd() {
     __zsh_infinite_internal precmd 2>/dev/null
+    echo -ne '\e[0 q'
 }
 
 # --- Transient Prompt ---
