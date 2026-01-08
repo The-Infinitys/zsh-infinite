@@ -1,6 +1,6 @@
 use clap::Parser;
 use tokio::runtime::Runtime;
-use zsh_system::{Features, ZshModule, ZshParameter, ZshResult, export_module};
+use zsh_system::{Features, ZshModule, ZshParameter, ZshResult, eval, export_module};
 
 mod args;
 use crate::{args::PromptType, zsh};
@@ -42,6 +42,7 @@ impl ZshInfinite {
         });
         ZshParameter::set_str("PROMPT", &transient_prompt)?;
         ZshParameter::set_str("RPROMPT", "")?;
+        eval("zle reset-prompt");
         Ok(())
     }
 }

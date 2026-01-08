@@ -14,6 +14,27 @@ pub fn dev() {
     let config_dir = run_dir.join(".config").join("zsh-infinite");
     fs::create_dir_all(&config_dir).expect("Failed to create config directory");
 
+    // .soファイルの配置先: run/.local/lib
+    let lib_dir = run_dir.join(".local").join("lib");
+    fs::create_dir_all(&lib_dir).expect("Failed to create lib directory");
+
+    let so_filename = if cfg!(target_os = "windows") {
+        "zsh_infinite.dll"
+    } else if cfg!(target_os = "macos") {
+        "libzsh_infinite.dylib"
+    } else {
+        "libzsh_infinite.so"
+    };
+
+    let so_path = current_dir.join("target").join("debug").join(so_filename);
+
+    if so_path.exists() {
+        let target_so_path = lib_dir.join(so_filename);
+        fs::copy(&so_path, &target_so_path).expect("Failed to copy dynamic library");
+    } else {
+        println!("Warning: Dynamic library not found at {:?}", so_path);
+    }
+
     // --- 2. 自分自身のバイナリをコピー ---
     let exe_path = env::current_exe().expect("Failed to get current executable path");
     let exe_name = exe_path.file_name().expect("Failed to get file name");
